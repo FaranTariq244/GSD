@@ -256,3 +256,29 @@
   - Assignees display: Full list with avatars (not truncated like on cards)
   - Comments and Attachments sections are placeholders showing "No comments yet" / "No attachments"
 ---
+## Iteration 13 - Implement task editing (tags, priority, due date, multi-assignees)
+- Added GET /account/members endpoint to fetch all account members for assignee selection
+- Transformed TaskDetailModal into an editable form with view/edit modes
+- Implemented edit mode with input fields for: title, description, tags (comma-separated), priority (select), due date (date picker), assignees (multi-select checkboxes)
+- Added save/cancel buttons with proper state management and validation
+- Integrated PATCH /tasks/:id API call to update task data
+- Added onTaskUpdated callback to refetch tasks in Board after successful save
+- Files changed:
+  - packages/backend/src/routes/account.ts (added GET /account/members endpoint)
+  - packages/frontend/src/components/TaskDetailModal.tsx (added edit mode, form state, save/cancel handlers)
+  - packages/frontend/src/components/TaskDetailModal.css (added form input styles, button styles)
+  - packages/frontend/src/components/Board.tsx (passed onTaskUpdated callback to modal)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - GET /account/members pattern: Query users joined with account_members, filtered by current user's account
+  - Edit mode toggle: Use isEditing state to conditionally render form inputs vs static displays
+  - Form state pattern: Maintain separate edit state variables (editTitle, editDescription, etc.) initialized from task props
+  - Tags input: Accept comma-separated string, split/trim/filter on save
+  - Multi-assignee selection: Use checkbox list with toggleAssignee helper to add/remove from editAssigneeIds array
+  - Cancel behavior: Reset all form state to original task values
+  - Escape key in edit mode: First press cancels edit, second press closes modal
+  - Save flow: Validate title -> PATCH request -> close edit mode -> trigger onTaskUpdated callback -> close modal
+  - CSS for form inputs: Consistent border-radius, focus states with blue border and subtle shadow
+  - Button styles: Primary (blue bg), Secondary (gray bg), disabled state (opacity 0.5)
+---
+
