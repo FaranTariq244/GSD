@@ -6,7 +6,7 @@
 - [x] Set up project structure (Node.js/TypeScript backend, React frontend)
 - [x] Set up database schema and migrations
 - [x] Implement user signup/login (POST /auth/signup, /auth/login, /auth/logout)
-- [ ] Implement GET /me endpoint
+- [x] Implement GET /me endpoint
 - [ ] Create account automatically on signup with single board
 - [ ] Implement member invite system (POST /account/invite)
 - [ ] Implement join flow for invited members

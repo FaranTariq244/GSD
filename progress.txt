@@ -72,3 +72,16 @@
   - Import pattern: pool is exported as default from db.ts (use `import pool from '../db.js'`)
   - 401 responses for auth failures, 400 for validation errors, 500 for server errors
 ---
+
+## Iteration 4 - Implement GET /me endpoint
+- Added GET /me endpoint to retrieve current authenticated user information
+- Endpoint uses authenticate middleware to verify JWT token from cookie
+- Returns user object with id, name, email, and created_at (excludes password_hash)
+- Files changed:
+  - packages/backend/src/routes/auth.ts (added GET /me endpoint)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - GET /me endpoint pattern: Use authenticate middleware, query user by req.userId
+  - Endpoint returns 404 if user not found, 500 for server errors
+  - Response format matches signup/login: { user: { id, name, email, created_at } }
+---

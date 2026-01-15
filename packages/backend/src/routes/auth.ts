@@ -120,6 +120,27 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
+// GET /me
+router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userResult = await pool.query(
+      'SELECT id, name, email, created_at FROM users WHERE id = $1',
+      [req.userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      user: userResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /auth/logout
 router.post('/logout', authenticate, (_req: AuthRequest, res: Response) => {
   res.clearCookie('token');
