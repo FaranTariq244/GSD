@@ -441,3 +441,21 @@
   - Route registration: app.use('/api', attachmentsRoutes) to handle /tasks/:id/attachments path
   - TypeScript fix: Handle req.params.id as string | string[] with Array.isArray check
 ---
+
+## Iteration 21 - Implement GET /attachments/:id endpoint
+- Created GET /attachments/:id endpoint to retrieve attachment metadata and download URL
+- Endpoint validates user access to task via board membership before returning attachment data
+- Returns attachment metadata including uploader information and presigned download URL
+- Files changed:
+  - packages/backend/src/routes/attachments.ts (added GET endpoint, imported getDownloadUrl)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Attachment retrieval pattern: Verify access via task->board->account_members, then generate presigned URL
+  - Response includes: attachment metadata + download_url (presigned, expires in 1 hour) + uploader details
+  - Access verification: JOIN attachments -> tasks -> boards -> account_members to check user membership
+  - Presigned URL generation: Use getDownloadUrl(storage_key) from storage.ts for secure file access
+  - HTTP status codes: 200 for success, 404 for not found, 500 for server errors
+  - Response format: { attachment: { ...fields, download_url, uploader: { id, name, email } } }
+  - Query includes uploader information (JOIN to users table) for display purposes
+  - Presigned URLs expire after 1 hour (configured in storage.ts getDownloadUrl function)
+---

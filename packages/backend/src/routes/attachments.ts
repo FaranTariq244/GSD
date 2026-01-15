@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import pool from '../db.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import { uploadFile, generateStorageKey, getDownloadUrl } from '../storage.js';
+import { uploadFile, generateStorageKey, getDownloadUrl, deleteFile } from '../storage.js';
 
 const router = express.Router();
 
@@ -124,6 +124,45 @@ router.get('/attachments/:id', authenticate, async (req: AuthRequest, res) => {
   } catch (error) {
     console.error('Error fetching attachment:', error);
     res.status(500).json({ error: 'Failed to fetch attachment' });
+  }
+});
+
+/**
+ * DELETE /attachments/:id
+ * Delete an attachment
+ */
+router.delete('/attachments/:id', authenticate, async (req: AuthRequest, res) => {
+  const attachmentId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+  const userId = req.userId!;
+
+  try {
+    // Fetch attachment and verify user has access to the task via board membership
+    const result = await pool.query(
+      `SELECT a.id, a.storage_key
+       FROM attachments a
+       INNER JOIN tasks t ON t.id = a.task_id
+       INNER JOIN boards b ON b.id = t.board_id
+       INNER JOIN account_members am ON am.account_id = b.account_id
+       WHERE a.id = $1 AND am.user_id = $2`,
+      [attachmentId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    const attachment = result.rows[0];
+
+    // Delete file from storage
+    await deleteFile(attachment.storage_key);
+
+    // Delete attachment record from database
+    await pool.query('DELETE FROM attachments WHERE id = $1', [attachmentId]);
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting attachment:', error);
+    res.status(500).json({ error: 'Failed to delete attachment' });
   }
 });
 
