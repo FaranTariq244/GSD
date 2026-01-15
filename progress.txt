@@ -367,3 +367,26 @@
   - Created_at is set to NOW() in database for consistent server-side timestamps
   - Author information is fetched separately after comment insert using userId from auth middleware
 ---
+
+## Iteration 18 - Build comments UI component
+- Integrated comments display and submission into TaskDetailModal component
+- Added useEffect to fetch comments when modal opens (GET /api/tasks/:id/comments)
+- Created comments list UI with author avatar (initials), name, timestamp, and body
+- Created comment composer with textarea and submit button
+- Implemented handleSubmitComment function to POST new comments and append to local state
+- Added CSS styles for comments list, comment items, and comment composer
+- Files changed:
+  - packages/frontend/src/components/TaskDetailModal.tsx (added Comment interface, comments state, fetch/submit logic, UI)
+  - packages/frontend/src/components/TaskDetailModal.css (added comments styles)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Comments UI pattern: Fetch on mount, display chronologically, composer at bottom
+  - Comment display: Avatar with initials (gray background), author name, timestamp, body text
+  - Comment composer: Textarea with "Write a comment..." placeholder, "Post Comment" button (disabled when empty)
+  - Submit flow: POST comment -> append to local state -> clear textarea -> no full refetch needed
+  - Comment avatar uses same getInitials helper as assignee avatars (2-letter initials)
+  - Comments list shows "No comments yet" when empty, otherwise renders all comments
+  - Comment body uses pre-wrap and word-wrap for proper text formatting with line breaks
+  - Comments section positioned after Attachments section in modal layout
+  - CSS styling: Light gray background (#f9fafb) for comment items and composer with subtle borders
+---
