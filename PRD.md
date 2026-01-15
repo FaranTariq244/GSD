@@ -26,7 +26,7 @@
 - [x] Add UI message when Today limit is reached
 
 ### M4 — Comments + Attachments
-- [ ] Implement GET /tasks/:id/comments endpoint
+- [x] Implement GET /tasks/:id/comments endpoint
 - [ ] Implement POST /tasks/:id/comments endpoint
 - [ ] Build comments UI component
 - [ ] Set up file storage (S3/R2/MinIO)

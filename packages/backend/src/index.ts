@@ -4,6 +4,7 @@ import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/account.js';
 import boardRoutes from './routes/board.js';
 import tasksRoutes from './routes/tasks.js';
+import commentsRoutes from './routes/comments.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/board', boardRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api', commentsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

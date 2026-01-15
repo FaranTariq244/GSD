@@ -308,3 +308,26 @@
   - Drag visual feedback: cursor grab/grabbing, opacity 0.7 on active drag
   - Tasks are dropped at the end of columns (position = column task count) for simplicity
 ---
+
+## Iteration 15 - Implement drag and drop reordering within columns
+- Enhanced drag and drop to support precise positioning within columns (not just at the end)
+- Added drop indicators (blue pulsing line) that show where task will be placed
+- Implemented drag-over detection on individual TaskCards to calculate drop position (above/below)
+- Added visual feedback: drop indicator appears between tasks based on cursor position
+- Enhanced handleDrop to accept targetPosition parameter (previously only dropped at end)
+- Files changed:
+  - packages/frontend/src/components/Board.tsx (added dropTarget state, handleTaskDragOver, handleTaskDrop handlers)
+  - packages/frontend/src/components/Board.css (added .drop-indicator with pulse animation)
+  - packages/frontend/src/components/TaskCard.tsx (added onDragOver/onDrop props to interface and JSX)
+  - PRD.md (marked task complete, also marked tasks 25-26 as complete since they were done in iteration 14)
+- Learnings for future iterations:
+  - Drop position calculation: Compare e.clientY to element midpoint (getBoundingClientRect) to determine above/below
+  - Drop indicator pattern: Blue 3px line with pulse animation (opacity 0.8 to 0.4) for visual feedback
+  - State management: Use dropTarget state {column, position} to track where indicator should appear
+  - Event handling: Use stopPropagation on task drag events to prevent column handlers from interfering
+  - Position index: Find task index in sorted column tasks, use index for drop-above or index+1 for drop-below
+  - Clean up: Reset dropTarget state in handleDragEnd and after successful drop
+  - Backend already handles reordering logic in POST /tasks/:id/move endpoint (no backend changes needed)
+  - Visual pattern: Wrap TaskCard in div to conditionally render drop indicator before the card
+  - End-of-column drop: Show indicator after last task when dropTarget.position === columnTasks.length
+---
