@@ -331,3 +331,21 @@
   - Visual pattern: Wrap TaskCard in div to conditionally render drop indicator before the card
   - End-of-column drop: Show indicator after last task when dropTarget.position === columnTasks.length
 ---
+
+## Iteration 16 - Implement GET /tasks/:id/comments endpoint
+- Created GET /tasks/:id/comments endpoint in new comments route file
+- Endpoint fetches all comments for a task with author information
+- Verifies user access to task via board membership before returning comments
+- Returns comments ordered chronologically (ASC by created_at)
+- Files changed:
+  - packages/backend/src/routes/comments.ts (new file with GET endpoint)
+  - packages/backend/src/index.ts (registered comments routes with /api prefix)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Comments table structure: id, task_id, author_id, body, created_at (from initial schema migration)
+  - Comment endpoint pattern: Verify task access via board membership, then fetch comments with JOIN to users
+  - Response format: { comments: [{ id, task_id, body, author: { id, name, email }, created_at }] }
+  - Comments are ordered ASC by created_at for chronological display (oldest first)
+  - Route registration: Use app.use('/api', commentsRoutes) since route already includes full path '/tasks/:id/comments'
+  - Task access verification: Same pattern as other task routes - join tasks -> boards -> account_members
+---
