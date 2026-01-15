@@ -479,3 +479,29 @@
   - deleteFile function from storage.ts uses DeleteObjectCommand from AWS SDK
   - No transaction needed: S3 deletion first, then DB deletion (S3 has no rollback)
 ---
+
+## Iteration 23 - Build attachments UI with image previews
+- Created GET /tasks/:id/attachments endpoint to list all attachments for a task with presigned download URLs
+- Integrated attachments display into TaskDetailModal component with image preview grid
+- Added file upload functionality with drag-and-drop file input
+- Implemented attachment deletion with confirmation dialog
+- Created responsive attachments grid with hover overlays for images
+- Added support for both image attachments (with previews) and file attachments (with file info)
+- Files changed:
+  - packages/backend/src/routes/attachments.ts (added GET /tasks/:id/attachments endpoint)
+  - packages/frontend/src/components/TaskDetailModal.tsx (added Attachment interface, attachment state, fetch/upload/delete handlers, attachments UI)
+  - packages/frontend/src/components/TaskDetailModal.css (added attachment grid, image preview, overlay, and file display styles)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - GET /tasks/:id/attachments pattern: Fetch all attachments with uploader info, generate presigned URLs for each
+  - Attachments UI uses grid layout with auto-fill minmax(200px, 1fr) for responsive display
+  - Image attachments: Display as 16:9 aspect ratio preview with hover overlay showing View/Delete actions
+  - File attachments: Display with file icon, name, size, and Download/Delete actions
+  - File upload pattern: Hidden file input triggered by button click, FormData upload to multipart endpoint
+  - Attachment deletion: Confirm dialog before DELETE request, then filter out from local state
+  - isImage helper: Check mime_type starts with 'image/' to determine preview type
+  - formatFileSize helper: Display bytes as B, KB, or MB with appropriate decimal places
+  - Presigned URLs: Generated on backend for each attachment, valid for 1 hour, used for img src and download links
+  - Attachment grid hover effects: Image overlay with gradient background, opacity transition on hover
+  - File input ref pattern: useRef for file input, trigger click programmatically, reset value after upload
+---
