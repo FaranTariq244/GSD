@@ -31,7 +31,7 @@
 - [x] Build comments UI component
 - [x] Set up file storage (S3/R2/MinIO)
 - [x] Implement POST /tasks/:id/attachments endpoint
-- [ ] Implement GET /attachments/:id endpoint
+- [x] Implement GET /attachments/:id endpoint
 - [ ] Implement DELETE /attachments/:id endpoint
 - [ ] Build attachments UI with image previews
 - [ ] Implement image thumbnail generation
