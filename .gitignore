@@ -22,9 +22,16 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+NUL
 
 # Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local scripts with credentials
+packages/backend/create-db.js
+
+# Claude Code local settings
+.claude/

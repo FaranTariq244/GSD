@@ -34,7 +34,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     // Build the query dynamically based on filters
     let query = `
-      SELECT DISTINCT t.id, t.board_id, t.title, t.description, t.column, t.position,
+      SELECT DISTINCT t.id, t.board_id, t.title, t.description, t."column", t.position,
              t.priority, t.due_date, t.created_by, t.created_at, t.updated_at
       FROM tasks t
       WHERE t.board_id = $1
@@ -44,7 +44,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     // Filter by column
     if (column && typeof column === 'string') {
-      query += ` AND t.column = $${paramIndex}`;
+      query += ` AND t."column" = $${paramIndex}`;
       params.push(column);
       paramIndex++;
     }
@@ -77,7 +77,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     }
 
     // Order by column position
-    query += ' ORDER BY t.column, t.position';
+    query += ' ORDER BY t."column", t.position';
 
     const tasksResult = await pool.query(query, params);
 
@@ -192,7 +192,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     const positionResult = await client.query(
       `SELECT COALESCE(MAX(position), 0) + 1 as next_position
        FROM tasks
-       WHERE board_id = $1 AND column = $2`,
+       WHERE board_id = $1 AND "column" = $2`,
       [boardId, column]
     );
 
@@ -200,9 +200,9 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     // Create the task
     const taskResult = await client.query(
-      `INSERT INTO tasks (board_id, title, description, column, position, priority, due_date, created_by)
+      `INSERT INTO tasks (board_id, title, description, "column", position, priority, due_date, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, board_id, title, description, column, position, priority, due_date, created_by, created_at, updated_at`,
+       RETURNING id, board_id, title, description, "column", position, priority, due_date, created_by, created_at, updated_at`,
       [boardId, title.trim(), description, column, position, priority, due_date, userId]
     );
 
@@ -362,7 +362,7 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         UPDATE tasks
         SET ${updates.join(', ')}
         WHERE id = $${paramIndex}
-        RETURNING id, board_id, title, description, column, position, priority, due_date, created_by, created_at, updated_at
+        RETURNING id, board_id, title, description, "column", position, priority, due_date, created_by, created_at, updated_at
       `;
       await client.query(updateQuery, params);
     }
@@ -415,7 +415,7 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 
     // Fetch the updated task with assignees and tags
     const updatedTaskResult = await pool.query(
-      `SELECT id, board_id, title, description, column, position, priority, due_date, created_by, created_at, updated_at
+      `SELECT id, board_id, title, description, "column", position, priority, due_date, created_by, created_at, updated_at
        FROM tasks
        WHERE id = $1`,
       [taskId]
@@ -495,7 +495,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
 
     // Verify the task exists and user has access to it (via board membership)
     const taskResult = await client.query(
-      `SELECT t.id, t.board_id, t.column, t.position
+      `SELECT t.id, t.board_id, t."column", t.position
        FROM tasks t
        INNER JOIN boards b ON t.board_id = b.id
        INNER JOIN account_members am ON b.account_id = am.account_id
@@ -516,7 +516,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
     // If moving to "today" column, check the max 3 limit
     if (to_column === 'today' && fromColumn !== 'today') {
       const todayCountResult = await client.query(
-        `SELECT COUNT(*) as count FROM tasks WHERE board_id = $1 AND column = 'today'`,
+        `SELECT COUNT(*) as count FROM tasks WHERE board_id = $1 AND "column" = 'today'`,
         [boardId]
       );
       const todayCount = parseInt(todayCountResult.rows[0].count);
@@ -538,7 +538,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
         await client.query(
           `UPDATE tasks
            SET position = position - 1
-           WHERE board_id = $1 AND column = $2 AND position > $3 AND position <= $4`,
+           WHERE board_id = $1 AND "column" = $2 AND position > $3 AND position <= $4`,
           [boardId, to_column, fromPosition, to_position]
         );
       } else if (fromPosition > to_position) {
@@ -546,7 +546,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
         await client.query(
           `UPDATE tasks
            SET position = position + 1
-           WHERE board_id = $1 AND column = $2 AND position >= $3 AND position < $4`,
+           WHERE board_id = $1 AND "column" = $2 AND position >= $3 AND position < $4`,
           [boardId, to_column, to_position, fromPosition]
         );
       }
@@ -556,7 +556,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
       await client.query(
         `UPDATE tasks
          SET position = position - 1
-         WHERE board_id = $1 AND column = $2 AND position > $3`,
+         WHERE board_id = $1 AND "column" = $2 AND position > $3`,
         [boardId, fromColumn, fromPosition]
       );
 
@@ -564,7 +564,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
       await client.query(
         `UPDATE tasks
          SET position = position + 1
-         WHERE board_id = $1 AND column = $2 AND position >= $3`,
+         WHERE board_id = $1 AND "column" = $2 AND position >= $3`,
         [boardId, to_column, to_position]
       );
     }
@@ -572,7 +572,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
     // Update the task's column and position
     await client.query(
       `UPDATE tasks
-       SET column = $1, position = $2, updated_at = NOW()
+       SET "column" = $1, position = $2, updated_at = NOW()
        WHERE id = $3`,
       [to_column, to_position, taskId]
     );
@@ -581,7 +581,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
 
     // Fetch the updated task with assignees and tags
     const updatedTaskResult = await pool.query(
-      `SELECT id, board_id, title, description, column, position, priority, due_date, created_by, created_at, updated_at
+      `SELECT id, board_id, title, description, "column", position, priority, due_date, created_by, created_at, updated_at
        FROM tasks
        WHERE id = $1`,
       [taskId]

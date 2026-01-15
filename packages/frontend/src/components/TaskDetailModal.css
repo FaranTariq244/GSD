@@ -68,6 +68,16 @@
   flex: 1;
 }
 
+.add-task-column-info {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
 .modal-section {
   margin-bottom: 32px;
 }
@@ -298,10 +308,15 @@
 .modal-actions {
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding-top: 16px;
   margin-top: 24px;
   border-top: 1px solid #e5e7eb;
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 12px;
 }
 
 .btn {
@@ -335,6 +350,15 @@
 
 .btn-secondary:hover:not(:disabled) {
   background-color: #e5e7eb;
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #dc2626;
 }
 
 /* Comments Styles */

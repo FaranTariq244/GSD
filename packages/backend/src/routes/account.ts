@@ -89,6 +89,79 @@ router.post('/invite', authenticate, async (req: AuthRequest, res: Response) => 
   }
 });
 
+// GET /account/invite/:token - Get invite info by token (no auth required to view)
+router.get('/invite/:token', async (req, res: Response) => {
+  const token = req.params.token;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token is required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT i.id, i.email, i.expires_at, i.used_at,
+              a.name as account_name,
+              u.name as invited_by_name
+       FROM invites i
+       INNER JOIN accounts a ON a.id = i.account_id
+       INNER JOIN users u ON u.id = i.invited_by
+       WHERE i.token = $1`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Invite not found' });
+    }
+
+    const invite = result.rows[0];
+
+    // Check if already used
+    if (invite.used_at !== null) {
+      return res.status(400).json({ error: 'This invite has already been used' });
+    }
+
+    // Check if expired
+    if (new Date(invite.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'This invite has expired' });
+    }
+
+    return res.status(200).json({
+      invite: {
+        email: invite.email,
+        account_name: invite.account_name,
+        invited_by: invite.invited_by_name,
+        expires_at: invite.expires_at
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching invite:', error);
+    return res.status(500).json({ error: 'Failed to fetch invite' });
+  }
+});
+
+// GET /account/invites - List all pending invites for user's account
+router.get('/invites', authenticate, async (req: AuthRequest, res: Response) => {
+  const userId = req.userId!;
+
+  try {
+    const result = await pool.query(
+      `SELECT i.id, i.email, i.token, i.created_at, i.expires_at, i.used_at
+       FROM invites i
+       INNER JOIN account_members am ON am.account_id = i.account_id
+       WHERE am.user_id = $1
+       ORDER BY i.created_at DESC`,
+      [userId]
+    );
+
+    return res.status(200).json({
+      invites: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching invites:', error);
+    return res.status(500).json({ error: 'Failed to fetch invites' });
+  }
+});
+
 // GET /account/members - Get all members of the user's account
 router.get('/members', authenticate, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;

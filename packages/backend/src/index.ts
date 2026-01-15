@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import express, { Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.js';
@@ -6,6 +7,9 @@ import boardRoutes from './routes/board.js';
 import tasksRoutes from './routes/tasks.js';
 import commentsRoutes from './routes/comments.js';
 import attachmentsRoutes from './routes/attachments.js';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;

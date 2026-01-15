@@ -205,6 +205,56 @@ router.get('/attachments/:id', authenticate, async (req: AuthRequest, res) => {
 });
 
 /**
+ * POST /attachments/temp
+ * Upload a temporary image (for use before task is created)
+ * These images are stored directly and the URL can be embedded in markdown
+ */
+router.post('/attachments/temp', authenticate, upload.single('file'), async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  // Only allow images for temp uploads
+  if (!req.file.mimetype.startsWith('image/')) {
+    return res.status(400).json({ error: 'Only image files are allowed for inline uploads' });
+  }
+
+  try {
+    // Verify user belongs to an account
+    const accountCheck = await pool.query(
+      `SELECT account_id FROM account_members WHERE user_id = $1 LIMIT 1`,
+      [userId]
+    );
+
+    if (accountCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'User is not part of any account' });
+    }
+
+    const accountId = accountCheck.rows[0].account_id;
+
+    // Generate storage key with account prefix for organization
+    const storageKey = `accounts/${accountId}/images/${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    await uploadFile(req.file.buffer, storageKey, req.file.mimetype);
+
+    // Generate download URL (permanent for embedded images)
+    const downloadUrl = await getDownloadUrl(storageKey);
+
+    res.status(201).json({
+      url: downloadUrl,
+      storage_key: storageKey,
+      filename: req.file.originalname,
+      mime_type: req.file.mimetype,
+      size_bytes: req.file.size,
+    });
+  } catch (error) {
+    console.error('Error uploading temp image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+/**
  * DELETE /attachments/:id
  * Delete an attachment
  */

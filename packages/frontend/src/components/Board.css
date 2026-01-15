@@ -7,6 +7,61 @@
   flex-direction: column;
 }
 
+.board-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.board-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.board-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background: #f3f4f6;
+}
+
+.logout-btn {
+  color: #6b7280;
+}
+
+.logout-btn:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.user-name {
+  font-size: 14px;
+  color: #374151;
+  padding: 4px 12px;
+  background: #f3f4f6;
+  border-radius: 16px;
+}
+
 .board-topbar {
   margin-bottom: 20px;
   display: flex;
@@ -154,12 +209,39 @@
   margin: 0;
 }
 
+.column-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .column-limit {
   font-size: 12px;
   color: #6b7280;
   background: #e5e7eb;
   padding: 2px 8px;
   border-radius: 12px;
+}
+
+.add-task-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: #3b82f6;
+  color: white;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.add-task-btn:hover {
+  background: #2563eb;
 }
 
 .column-tasks {

@@ -40,7 +40,7 @@ CREATE TABLE tasks (
   board_id INTEGER NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
   title VARCHAR(500) NOT NULL,
   description TEXT,
-  column VARCHAR(50) NOT NULL,
+  "column" VARCHAR(50) NOT NULL,
   position FLOAT NOT NULL DEFAULT 0,
   priority VARCHAR(50) NOT NULL DEFAULT 'normal',
   due_date DATE,
@@ -87,7 +87,7 @@ CREATE TABLE attachments (
 
 -- Create indexes for common queries
 CREATE INDEX idx_tasks_board_id ON tasks(board_id);
-CREATE INDEX idx_tasks_column ON tasks(column);
+CREATE INDEX idx_tasks_column ON tasks("column");
 CREATE INDEX idx_task_assignees_user_id ON task_assignees(user_id);
 CREATE INDEX idx_task_tags_tag ON task_tags(tag);
 CREATE INDEX idx_comments_task_id ON comments(task_id);

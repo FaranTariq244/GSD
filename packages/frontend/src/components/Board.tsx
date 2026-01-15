@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Board.css';
 import { TaskCard } from './TaskCard';
 import './TaskCard.css';
 import { TaskDetailModal } from './TaskDetailModal';
+import { AddTaskModal } from './AddTaskModal';
 import { OnboardingHints } from './OnboardingHints';
+import { useAuth } from '../context/AuthContext';
 
 type Column = 'goals' | 'inbox' | 'today' | 'wait' | 'finished' | 'someday';
 
@@ -38,6 +41,8 @@ interface Member {
 }
 
 export function Board() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +55,12 @@ export function Board() {
   const [tagFilter, setTagFilter] = useState<string>('');
   const [members, setMembers] = useState<Member[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [addTaskColumn, setAddTaskColumn] = useState<Column | null>(null);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   useEffect(() => {
     fetchMembers();
@@ -222,6 +233,19 @@ export function Board() {
 
   return (
     <div className="board">
+      <header className="board-header">
+        <h1 className="board-title">GSD Board</h1>
+        <nav className="board-nav">
+          <button className="nav-link" onClick={() => navigate('/team')}>
+            Team
+          </button>
+          <span className="user-name">{user?.name}</span>
+          <button className="nav-link logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+        </nav>
+      </header>
+
       {todayLimitMessage && (
         <div className="today-limit-message">
           {todayLimitMessage}
@@ -276,11 +300,20 @@ export function Board() {
             >
               <div className="column-header">
                 <h2 className="column-title">{column.title}</h2>
-                {column.maxTasks && (
-                  <span className="column-limit">
-                    {columnTasks.length}/{column.maxTasks}
-                  </span>
-                )}
+                <div className="column-header-actions">
+                  {column.maxTasks && (
+                    <span className="column-limit">
+                      {columnTasks.length}/{column.maxTasks}
+                    </span>
+                  )}
+                  <button
+                    className="add-task-btn"
+                    onClick={() => setAddTaskColumn(column.id)}
+                    title="Add task"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div className="column-tasks">
                 {columnTasks.length === 0 ? (
@@ -326,6 +359,14 @@ export function Board() {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
           onTaskUpdated={fetchTasks}
+        />
+      )}
+
+      {addTaskColumn && (
+        <AddTaskModal
+          targetColumn={addTaskColumn}
+          onClose={() => setAddTaskColumn(null)}
+          onTaskCreated={fetchTasks}
         />
       )}
     </div>

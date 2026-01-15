@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import './TaskDetailModal.css';
+import { RichTextEditor, MarkdownContent } from './RichTextEditor';
+import './RichTextEditor.css';
 
 interface Task {
   id: string;
@@ -55,6 +57,7 @@ interface TaskDetailModalProps {
   task: Task;
   onClose: () => void;
   onTaskUpdated: () => void;
+  onTaskDeleted?: () => void;
 }
 
 const PRIORITY_COLORS = {
@@ -71,10 +74,11 @@ const PRIORITY_LABELS = {
   cold: 'Cold',
 };
 
-export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }: TaskDetailModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -251,6 +255,35 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
     );
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete task');
+      }
+
+      if (onTaskDeleted) {
+        onTaskDeleted();
+      }
+      onTaskUpdated();
+      onClose();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleSubmitComment = async () => {
     if (!newCommentBody.trim()) {
       return;
@@ -404,16 +437,15 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
           <section className="modal-section">
             <h3 className="section-title">Description</h3>
             {isEditing ? (
-              <textarea
-                className="description-textarea"
+              <RichTextEditor
                 value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Add a description..."
-                rows={4}
+                onChange={setEditDescription}
+                placeholder="Add a description... You can paste or drag images here!"
+                taskId={task.id}
               />
             ) : (
               <div className="description-content">
-                {task.description || <span className="text-muted">No description</span>}
+                <MarkdownContent content={task.description} />
               </div>
             )}
           </section>
@@ -665,23 +697,33 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
           {/* Edit/Save Buttons */}
           {isEditing ? (
             <div className="modal-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
+              <div></div>
+              <div className="modal-actions-right">
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
             </div>
           ) : (
             <div className="modal-actions">
+              <button
+                className="btn btn-danger"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Task'}
+              </button>
               <button
                 className="btn btn-primary"
                 onClick={() => setIsEditing(true)}
