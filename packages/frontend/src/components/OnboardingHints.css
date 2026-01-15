@@ -1,0 +1,109 @@
+.onboarding-hints {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.onboarding-hints-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.onboarding-hints-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.onboarding-hints-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.onboarding-hints-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.onboarding-hints-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hint-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.hint-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.hint-icon {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hint-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hint-text strong {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+/* Responsive: Stack hints on mobile */
+@media (max-width: 768px) {
+  .onboarding-hints {
+    padding: 16px;
+  }
+
+  .onboarding-hints-title {
+    font-size: 16px;
+  }
+
+  .hint-icon {
+    font-size: 20px;
+  }
+
+  .hint-text {
+    font-size: 13px;
+  }
+}

@@ -614,3 +614,24 @@
   - Messages explain both the current state (empty) and the intended use of the column
   - Good UX: Empty states should be instructive, not just descriptive
 ---
+
+## Iteration 29 - Add loading states
+- Added loading states to TaskDetailModal for async data fetching operations
+- Board component already had loading state for initial tasks fetch (lines 41, 214-216)
+- Enhanced TaskDetailModal with three new loading state variables:
+  - isLoadingMembers: Shows "Loading..." while fetching account members for assignee dropdown
+  - isLoadingComments: Shows "Loading comments..." while fetching task comments
+  - isLoadingAttachments: Shows "Loading attachments..." while fetching task attachments
+- Files changed:
+  - packages/frontend/src/components/TaskDetailModal.tsx (added 3 loading states, updated useEffect hooks, updated UI conditionals)
+  - packages/frontend/src/components/TaskDetailModal.css (added .loading-text CSS class)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Loading state pattern: Create boolean state (isLoadingX), set to true before fetch, set to false in finally block
+  - Board loading state: Already implemented with board-loading and board-error CSS classes in Board.css
+  - TaskDetailModal loading states: Display during initial data fetches to prevent flash of empty content
+  - Loading text styling: Gray color (#6b7280), 14px font, 12px vertical padding for consistency
+  - Async operations already had loading states: isSaving (save task), isSubmittingComment (post comment), isUploadingAttachment (upload file)
+  - Loading indicators shown conditionally: isLoadingComments ? "Loading comments..." : comments.length === 0 ? "No comments yet" : <list>
+  - All three sections (comments, attachments, assignees in edit mode) now provide visual feedback during data loading
+---

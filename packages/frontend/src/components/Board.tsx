@@ -3,6 +3,7 @@ import './Board.css';
 import { TaskCard } from './TaskCard';
 import './TaskCard.css';
 import { TaskDetailModal } from './TaskDetailModal';
+import { OnboardingHints } from './OnboardingHints';
 
 type Column = 'goals' | 'inbox' | 'today' | 'wait' | 'finished' | 'someday';
 
@@ -226,6 +227,8 @@ export function Board() {
           {todayLimitMessage}
         </div>
       )}
+
+      <OnboardingHints />
 
       <div className="board-topbar">
         <input

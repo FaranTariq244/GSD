@@ -42,7 +42,7 @@
 - [x] Implement filter by tag
 - [x] Add empty states for columns
 - [x] Add loading states
-- [ ] Add onboarding hints
+- [x] Add onboarding hints
 
 ## 1) Overview
 Build a **small-team** kanban tool inspired by the GSD-style workflow. Each account has **exactly one shared board** where the team captures, prioritizes, and finishes tasks. The board uses a **fixed set of columns**, supports **multiple assignees**, and includes **comments + image/file attachments** with small “ticket-style” previews.
