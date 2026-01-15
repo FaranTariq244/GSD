@@ -17,7 +17,7 @@
 - [x] Build board columns UI component
 - [x] Build task card component with tags, priority, due date, assignees
 - [x] Implement task detail modal/drawer
-- [ ] Implement task editing (tags, priority, due date, multi-assignees)
+- [x] Implement task editing (tags, priority, due date, multi-assignees)
 
 ### M3 — Drag/Drop + Today Limit
 - [ ] Implement drag and drop for tasks across columns

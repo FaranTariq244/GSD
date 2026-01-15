@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './TaskDetailModal.css';
 
 interface Task {
@@ -16,9 +16,16 @@ interface Task {
   updated_at: string;
 }
 
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface TaskDetailModalProps {
   task: Task;
   onClose: () => void;
+  onTaskUpdated: () => void;
 }
 
 const PRIORITY_COLORS = {
@@ -35,13 +42,30 @@ const PRIORITY_LABELS = {
   cold: 'Cold',
 };
 
-export function TaskDetailModal({ task, onClose }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  // Edit form state
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editDescription, setEditDescription] = useState(task.description || '');
+  const [editPriority, setEditPriority] = useState(task.priority);
+  const [editDueDate, setEditDueDate] = useState(task.due_date || '');
+  const [editTags, setEditTags] = useState(task.tags.join(', '));
+  const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>(
+    task.assignees.map(a => a.id)
+  );
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (isEditing) {
+          setIsEditing(false);
+        } else {
+          onClose();
+        }
       }
     };
 
@@ -58,7 +82,89 @@ export function TaskDetailModal({ task, onClose }: TaskDetailModalProps) {
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [onClose]);
+  }, [onClose, isEditing]);
+
+  useEffect(() => {
+    // Fetch account members for assignee selection
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch('/api/account/members', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setMembers(data.members || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch members:', error);
+      }
+    };
+
+    fetchMembers();
+  }, []);
+
+  const handleSave = async () => {
+    if (!editTitle.trim()) {
+      alert('Title is required');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const tags = editTags
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim() || null,
+          priority: editPriority,
+          due_date: editDueDate || null,
+          tags,
+          assignee_ids: editAssigneeIds,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task');
+      }
+
+      setIsEditing(false);
+      onTaskUpdated();
+      onClose();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert('Failed to update task. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    // Reset to original values
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+    setEditPriority(task.priority);
+    setEditDueDate(task.due_date || '');
+    setEditTags(task.tags.join(', '));
+    setEditAssigneeIds(task.assignees.map(a => a.id));
+    setIsEditing(false);
+  };
+
+  const toggleAssignee = (memberId: string) => {
+    setEditAssigneeIds(prev =>
+      prev.includes(memberId)
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -93,7 +199,17 @@ export function TaskDetailModal({ task, onClose }: TaskDetailModalProps) {
     <div className="modal-overlay" ref={modalRef}>
       <div className="modal-container">
         <div className="modal-header">
-          <h2 className="modal-title">{task.title}</h2>
+          {isEditing ? (
+            <input
+              type="text"
+              className="modal-title-input"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Task title"
+            />
+          ) : (
+            <h2 className="modal-title">{task.title}</h2>
+          )}
           <button className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
@@ -103,9 +219,19 @@ export function TaskDetailModal({ task, onClose }: TaskDetailModalProps) {
           {/* Description Section */}
           <section className="modal-section">
             <h3 className="section-title">Description</h3>
-            <div className="description-content">
-              {task.description || <span className="text-muted">No description</span>}
-            </div>
+            {isEditing ? (
+              <textarea
+                className="description-textarea"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Add a description..."
+                rows={4}
+              />
+            ) : (
+              <div className="description-content">
+                {task.description || <span className="text-muted">No description</span>}
+              </div>
+            )}
           </section>
 
           {/* Metadata Section */}
@@ -115,58 +241,105 @@ export function TaskDetailModal({ task, onClose }: TaskDetailModalProps) {
               {/* Priority */}
               <div className="detail-item">
                 <label className="detail-label">Priority</label>
-                <div className="detail-value">
-                  <span
-                    className="priority-indicator"
-                    style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}
-                  />
-                  {PRIORITY_LABELS[task.priority]}
-                </div>
+                {isEditing ? (
+                  <select
+                    className="detail-select"
+                    value={editPriority}
+                    onChange={(e) => setEditPriority(e.target.value as Task['priority'])}
+                  >
+                    <option value="hot">Hot</option>
+                    <option value="warm">Warm</option>
+                    <option value="normal">Normal</option>
+                    <option value="cold">Cold</option>
+                  </select>
+                ) : (
+                  <div className="detail-value">
+                    <span
+                      className="priority-indicator"
+                      style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}
+                    />
+                    {PRIORITY_LABELS[task.priority]}
+                  </div>
+                )}
               </div>
 
               {/* Due Date */}
               <div className="detail-item">
                 <label className="detail-label">Due Date</label>
-                <div className="detail-value">
-                  {task.due_date ? formatDate(task.due_date) : <span className="text-muted">Not set</span>}
-                </div>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    className="detail-input"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                  />
+                ) : (
+                  <div className="detail-value">
+                    {task.due_date ? formatDate(task.due_date) : <span className="text-muted">Not set</span>}
+                  </div>
+                )}
               </div>
 
               {/* Tags */}
               <div className="detail-item">
                 <label className="detail-label">Tags</label>
-                <div className="detail-value">
-                  {task.tags.length > 0 ? (
-                    <div className="tags-list">
-                      {task.tags.map(tag => (
-                        <span key={tag} className="tag-chip">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">No tags</span>
-                  )}
-                </div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    className="detail-input"
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                    placeholder="tag1, tag2, tag3"
+                  />
+                ) : (
+                  <div className="detail-value">
+                    {task.tags.length > 0 ? (
+                      <div className="tags-list">
+                        {task.tags.map(tag => (
+                          <span key={tag} className="tag-chip">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted">No tags</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Assignees */}
               <div className="detail-item">
                 <label className="detail-label">Assignees</label>
-                <div className="detail-value">
-                  {task.assignees.length > 0 ? (
-                    <div className="assignees-list">
-                      {task.assignees.map(assignee => (
-                        <div key={assignee.id} className="assignee-item">
-                          <div className="assignee-avatar">{getInitials(assignee.name)}</div>
-                          <span className="assignee-name">{assignee.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted">Not assigned</span>
-                  )}
-                </div>
+                {isEditing ? (
+                  <div className="assignees-select">
+                    {members.map(member => (
+                      <label key={member.id} className="assignee-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={editAssigneeIds.includes(member.id)}
+                          onChange={() => toggleAssignee(member.id)}
+                        />
+                        <span>{member.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="detail-value">
+                    {task.assignees.length > 0 ? (
+                      <div className="assignees-list">
+                        {task.assignees.map(assignee => (
+                          <div key={assignee.id} className="assignee-item">
+                            <div className="assignee-avatar">{getInitials(assignee.name)}</div>
+                            <span className="assignee-name">{assignee.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted">Not assigned</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -182,6 +355,35 @@ export function TaskDetailModal({ task, onClose }: TaskDetailModalProps) {
             <h3 className="section-title">Comments</h3>
             <div className="text-muted">No comments yet</div>
           </section>
+
+          {/* Edit/Save Buttons */}
+          {isEditing ? (
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={handleCancel}
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          ) : (
+            <div className="modal-actions">
+              <button
+                className="btn btn-primary"
+                onClick={() => setIsEditing(true)}
+              >
+                Edit Task
+              </button>
+            </div>
+          )}
 
           {/* Metadata Footer */}
           <div className="modal-footer">

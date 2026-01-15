@@ -89,6 +89,32 @@ router.post('/invite', authenticate, async (req: AuthRequest, res: Response) => 
   }
 });
 
+// GET /account/members - Get all members of the user's account
+router.get('/members', authenticate, async (req: AuthRequest, res: Response) => {
+  const userId = req.userId!;
+
+  try {
+    // Get all members of the user's account
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.email, am.role, am.created_at as joined_at
+       FROM users u
+       INNER JOIN account_members am ON u.id = am.user_id
+       WHERE am.account_id = (
+         SELECT account_id FROM account_members WHERE user_id = $1 LIMIT 1
+       )
+       ORDER BY u.name`,
+      [userId]
+    );
+
+    return res.status(200).json({
+      members: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching account members:', error);
+    return res.status(500).json({ error: 'Failed to fetch account members' });
+  }
+});
+
 // POST /account/join - Join an account using an invite token
 router.post('/join', authenticate, async (req: AuthRequest, res: Response) => {
   const { token } = req.body;

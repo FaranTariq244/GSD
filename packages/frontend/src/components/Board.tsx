@@ -112,6 +112,7 @@ export function Board() {
         <TaskDetailModal
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
+          onTaskUpdated={fetchTasks}
         />
       )}
     </div>
