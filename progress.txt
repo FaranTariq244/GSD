@@ -231,3 +231,28 @@
   - Task card cursor is pointer to indicate clickable (for future task detail modal)
   - Assignee avatars are stacked with negative margin-left (-8px) for compact display
 ---
+## Iteration 12 - Implement task detail modal/drawer
+- Created TaskDetailModal component that displays full task details in a modal overlay
+- Modal shows task title, description, priority, due date, tags, and assignees
+- Implemented modal close behavior via Escape key and clicking outside
+- Added placeholder sections for comments and attachments (to be implemented in M4)
+- Updated TaskCard to accept onClick handler and trigger modal
+- Updated Board component to manage modal state and display selected task
+- Files changed:
+  - packages/frontend/src/components/TaskDetailModal.tsx (new file)
+  - packages/frontend/src/components/TaskDetailModal.css (new file)
+  - packages/frontend/src/components/TaskCard.tsx (added onClick prop)
+  - packages/frontend/src/components/Board.tsx (added modal state and integration)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Modal overlay pattern: Fixed position with rgba background overlay at z-index 1000
+  - Modal close handlers: Listen for Escape key and click outside (on overlay, not container)
+  - Event listeners cleanup: Always remove listeners in useEffect cleanup function
+  - Modal body scrolling: Container has max-height 90vh with overflow-y auto on body
+  - Task detail sections: Description, Details (grid), Attachments (placeholder), Comments (placeholder)
+  - Details grid: 2-column responsive layout (1 column on mobile < 600px)
+  - Priority display: Colored dot + label using same colors as task cards
+  - Date formatting: formatDate for due dates, formatDateTime for created/updated timestamps
+  - Assignees display: Full list with avatars (not truncated like on cards)
+  - Comments and Attachments sections are placeholders showing "No comments yet" / "No attachments"
+---
