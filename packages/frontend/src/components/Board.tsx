@@ -30,6 +30,12 @@ const COLUMNS: Array<{ id: Column; title: string; maxTasks?: number }> = [
   { id: 'someday', title: 'Someday / Maybe' },
 ];
 
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export function Board() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,10 +45,33 @@ export function Board() {
   const [todayLimitMessage, setTodayLimitMessage] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ column: Column; position: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('');
+  const [members, setMembers] = useState<Member[]>([]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
 
   useEffect(() => {
     fetchTasks();
-  }, [searchQuery]);
+  }, [searchQuery, assigneeFilter]);
+
+  const fetchMembers = async () => {
+    try {
+      const response = await fetch('/api/account/members', {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch members');
+      }
+
+      const data = await response.json();
+      setMembers(data.members || []);
+    } catch (err) {
+      console.error('Error fetching members:', err);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -52,6 +81,9 @@ export function Board() {
       const params = new URLSearchParams();
       if (searchQuery.trim()) {
         params.append('search', searchQuery.trim());
+      }
+      if (assigneeFilter) {
+        params.append('assignee', assigneeFilter);
       }
 
       const url = `/api/tasks${params.toString() ? '?' + params.toString() : ''}`;
@@ -191,6 +223,18 @@ export function Board() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
+        <select
+          className="assignee-filter"
+          value={assigneeFilter}
+          onChange={(e) => setAssigneeFilter(e.target.value)}
+        >
+          <option value="">All Assignees</option>
+          {members.map((member) => (
+            <option key={member.id} value={member.id}>
+              {member.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="board-columns">
