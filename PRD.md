@@ -7,7 +7,7 @@
 - [x] Set up database schema and migrations
 - [x] Implement user signup/login (POST /auth/signup, /auth/login, /auth/logout)
 - [x] Implement GET /me endpoint
-- [ ] Create account automatically on signup with single board
+- [x] Create account automatically on signup with single board
 - [ ] Implement member invite system (POST /account/invite)
 - [ ] Implement join flow for invited members
 

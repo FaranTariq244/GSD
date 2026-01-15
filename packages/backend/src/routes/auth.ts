@@ -20,14 +20,19 @@ router.post('/signup', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
+
     // Check if user already exists
-    const existingUser = await pool.query(
+    const existingUser = await client.query(
       'SELECT id FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
     if (existingUser.rows.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Email already registered' });
     }
 
@@ -35,12 +40,34 @@ router.post('/signup', async (req: Request, res: Response) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create user
-    const userResult = await pool.query(
+    const userResult = await client.query(
       'INSERT INTO users (name, email, password_hash, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id, name, email, created_at',
       [name, email.toLowerCase(), passwordHash]
     );
 
     const user = userResult.rows[0];
+
+    // Create account for the user
+    const accountResult = await client.query(
+      'INSERT INTO accounts (name, owner_id, created_at) VALUES ($1, $2, NOW()) RETURNING id',
+      [`${name}'s Team`, user.id]
+    );
+
+    const account = accountResult.rows[0];
+
+    // Add user as owner in account_members
+    await client.query(
+      'INSERT INTO account_members (account_id, user_id, role, created_at) VALUES ($1, $2, $3, NOW())',
+      [account.id, user.id, 'owner']
+    );
+
+    // Create board for the account
+    await client.query(
+      'INSERT INTO boards (account_id, name, created_at) VALUES ($1, $2, NOW())',
+      [account.id, 'Team Board']
+    );
+
+    await client.query('COMMIT');
 
     // Generate JWT token
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
@@ -62,8 +89,11 @@ router.post('/signup', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Signup error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 
