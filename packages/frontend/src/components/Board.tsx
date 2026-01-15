@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import './Board.css';
+import { TaskCard } from './TaskCard';
+import './TaskCard.css';
 
 type Column = 'goals' | 'inbox' | 'today' | 'wait' | 'finished' | 'someday';
 
@@ -91,9 +93,7 @@ export function Board() {
                   <div className="column-empty">No tasks</div>
                 ) : (
                   columnTasks.map(task => (
-                    <div key={task.id} className="task-placeholder">
-                      {task.title}
-                    </div>
+                    <TaskCard key={task.id} task={task} />
                   ))
                 )}
               </div>

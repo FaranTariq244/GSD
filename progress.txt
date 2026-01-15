@@ -181,3 +181,31 @@
   - Filter patterns: column (exact match), assignee (EXISTS subquery), tag (EXISTS subquery), search (ILIKE for title)
   - Task response format includes: id, board_id, title, description, column, position, priority, due_date, assignees[], tags[], created_by, created_at, updated_at
 ---
+## Iteration 10 - Build board columns UI component
+- Created Board.tsx component displaying 6 fixed columns with proper layout
+- Integrated task fetching from backend API using fetch with credentials
+- Added column headers with task counts and max limit indicator (Today shows X/3)
+- Created Board.css with clean, modern styling (flex-based column layout)
+- Updated App.tsx to render Board component instead of default Vite template
+- Cleaned up App.css and index.css for proper full-page board layout
+- Added API proxy in vite.config.ts to forward /api requests to backend (port 3000)
+- Updated backend index.ts to prefix all routes with /api
+- Files changed:
+  - packages/frontend/src/components/Board.tsx (new file)
+  - packages/frontend/src/components/Board.css (new file)
+  - packages/frontend/src/App.tsx (replaced with Board component)
+  - packages/frontend/src/App.css (simplified to full-page layout)
+  - packages/frontend/src/index.css (updated with clean design system)
+  - packages/frontend/vite.config.ts (added proxy config)
+  - packages/backend/src/index.ts (added /api prefix to routes)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Frontend uses fetch() with credentials: 'include' to send JWT cookies to backend
+  - Vite proxy config forwards /api requests to backend (http://localhost:3000)
+  - Backend routes now prefixed with /api for cleaner separation
+  - Board component displays empty state when columns have no tasks
+  - Column layout uses flex with fixed 300px width per column
+  - Task placeholder cards shown (will be replaced by actual TaskCard component next)
+  - Column types: 'goals', 'inbox', 'today', 'wait', 'finished', 'someday'
+  - Today column shows count/limit badge (X/3)
+---
