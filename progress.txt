@@ -282,3 +282,29 @@
   - Button styles: Primary (blue bg), Secondary (gray bg), disabled state (opacity 0.5)
 ---
 
+
+## Iteration 14 - Implement drag and drop for tasks across columns
+- Created POST /tasks/:id/move endpoint in backend with Today max 3 validation
+- Added HTML5 drag and drop support to TaskCard component (draggable with onDragStart/onDragEnd)
+- Implemented drag handlers in Board component (handleDragStart, handleDragEnd, handleDragOver, handleDrop)
+- Added Today limit error message display (fixed position notification that auto-dismisses after 4s)
+- Added visual feedback for dragging (cursor: grab/grabbing, opacity change on active)
+- Files changed:
+  - packages/backend/src/routes/tasks.ts (added POST /tasks/:id/move endpoint)
+  - packages/frontend/src/components/Board.tsx (drag state, handlers, today limit message)
+  - packages/frontend/src/components/Board.css (today-limit-message styles with animation)
+  - packages/frontend/src/components/TaskCard.tsx (draggable props, drag event handlers)
+  - packages/frontend/src/components/TaskCard.css (cursor styles for drag)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - POST /tasks/:id/move validates Today column limit (max 3 tasks) before moving
+  - Move endpoint handles position recalculation: shifts tasks in source column up, shifts tasks in target column down
+  - Within same column: different logic for moving up vs moving down
+  - HTML5 drag and drop pattern: draggable attribute, onDragStart/onDragEnd/onDragOver/onDrop events
+  - Drag state tracking: Store draggedTask in state to know what's being dragged
+  - Drop handler: Calculate new position (append to end = columnTasks.length), call API, refresh tasks
+  - Today limit error: Backend returns code='TODAY_LIMIT_REACHED' for special handling
+  - UI message pattern: Fixed position notification with slideDown animation, auto-dismiss with setTimeout
+  - Drag visual feedback: cursor grab/grabbing, opacity 0.7 on active drag
+  - Tasks are dropped at the end of columns (position = column task count) for simplicity
+---

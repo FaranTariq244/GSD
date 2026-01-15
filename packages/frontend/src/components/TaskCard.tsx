@@ -10,6 +10,8 @@ interface TaskCardProps {
   onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
 }
 
 const PRIORITY_COLORS = {
@@ -19,7 +21,7 @@ const PRIORITY_COLORS = {
   cold: '#3b82f6',
 };
 
-export function TaskCard({ task, onClick, onDragStart, onDragEnd }: TaskCardProps) {
+export function TaskCard({ task, onClick, onDragStart, onDragEnd, onDragOver, onDrop }: TaskCardProps) {
   const visibleTags = task.tags.slice(0, 2);
   const remainingTagCount = task.tags.length - 2;
 
@@ -64,6 +66,8 @@ export function TaskCard({ task, onClick, onDragStart, onDragEnd }: TaskCardProp
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
     >
       <div className="task-card-header">
         <div className="task-priority" style={{ backgroundColor: PRIORITY_COLORS[task.priority] }} />

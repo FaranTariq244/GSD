@@ -37,6 +37,7 @@ export function Board() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [todayLimitMessage, setTodayLimitMessage] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ column: Column; position: number } | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -76,6 +77,7 @@ export function Board() {
 
   const handleDragEnd = () => {
     setDraggedTask(null);
+    setDropTarget(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -83,16 +85,17 @@ export function Board() {
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = async (targetColumn: Column) => {
+  const handleDrop = async (targetColumn: Column, targetPosition?: number) => {
     if (!draggedTask) return;
 
-    // Calculate new position (append to end of column)
+    // Use provided position or append to end of column
     const columnTasks = getTasksForColumn(targetColumn);
-    const newPosition = columnTasks.length;
+    const newPosition = targetPosition !== undefined ? targetPosition : columnTasks.length;
 
     // Don't do anything if dropping in same position
     if (draggedTask.column === targetColumn && draggedTask.position === newPosition) {
       setDraggedTask(null);
+      setDropTarget(null);
       return;
     }
 
@@ -124,7 +127,36 @@ export function Board() {
       setError(err instanceof Error ? err.message : 'Failed to move task');
     } finally {
       setDraggedTask(null);
+      setDropTarget(null);
     }
+  };
+
+  const handleTaskDragOver = (task: Task) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedTask || draggedTask.id === task.id) return;
+
+    // Determine if we should drop above or below this task
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const dropAbove = e.clientY < midpoint;
+
+    // Calculate target position
+    const columnTasks = getTasksForColumn(task.column);
+    const taskIndex = columnTasks.findIndex(t => t.id === task.id);
+    const targetPosition = dropAbove ? taskIndex : taskIndex + 1;
+
+    setDropTarget({ column: task.column, position: targetPosition });
+  };
+
+  const handleTaskDrop = (task: Task) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedTask || !dropTarget) return;
+
+    handleDrop(dropTarget.column, dropTarget.position);
   };
 
   if (loading) {
@@ -165,16 +197,35 @@ export function Board() {
                 {columnTasks.length === 0 ? (
                   <div className="column-empty">No tasks</div>
                 ) : (
-                  columnTasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onClick={() => setSelectedTask(task)}
-                      onDragStart={handleDragStart(task)}
-                      onDragEnd={handleDragEnd}
-                    />
-                  ))
+                  columnTasks.map((task, index) => {
+                    const showDropIndicator =
+                      dropTarget &&
+                      dropTarget.column === column.id &&
+                      dropTarget.position === index;
+
+                    return (
+                      <div key={task.id}>
+                        {showDropIndicator && (
+                          <div className="drop-indicator" />
+                        )}
+                        <TaskCard
+                          task={task}
+                          onClick={() => setSelectedTask(task)}
+                          onDragStart={handleDragStart(task)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={handleTaskDragOver(task)}
+                          onDrop={handleTaskDrop(task)}
+                        />
+                      </div>
+                    );
+                  })
                 )}
+                {/* Drop indicator at end of column */}
+                {dropTarget &&
+                  dropTarget.column === column.id &&
+                  dropTarget.position === columnTasks.length && (
+                    <div className="drop-indicator" />
+                  )}
               </div>
             </div>
           );

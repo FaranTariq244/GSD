@@ -21,9 +21,9 @@
 
 ### M3 — Drag/Drop + Today Limit
 - [x] Implement drag and drop for tasks across columns
-- [ ] Implement drag and drop reordering within columns
-- [ ] Implement POST /tasks/:id/move endpoint with Today max 3 validation
-- [ ] Add UI message when Today limit is reached
+- [x] Implement drag and drop reordering within columns
+- [x] Implement POST /tasks/:id/move endpoint with Today max 3 validation
+- [x] Add UI message when Today limit is reached
 
 ### M4 — Comments + Attachments
 - [ ] Implement GET /tasks/:id/comments endpoint
