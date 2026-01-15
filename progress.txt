@@ -124,3 +124,22 @@
   - Email normalization: lowercase and trim before storing/comparing
   - Returns invite object with id, email, token, created_at, expires_at
 ---
+
+## Iteration 7 - Implement join flow for invited members
+- Created POST /account/join endpoint that allows users to accept invites and join accounts
+- Endpoint validates invite token (exists, not used, not expired)
+- Verifies authenticated user's email matches invite email
+- Adds user to account_members table with role 'member'
+- Marks invite as used by setting used_at timestamp
+- Returns account details after successful join
+- Files changed:
+  - packages/backend/src/routes/account.ts (added /account/join endpoint)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Join flow pattern: validate token -> check expiry/used status -> verify email match -> add to account -> mark invite used
+  - Uses database transaction for atomicity (BEGIN/COMMIT/ROLLBACK)
+  - Email verification: user's email must match invite email (case-insensitive comparison)
+  - Prevents duplicate membership: checks if user is already a member before adding
+  - HTTP status codes: 404 for invalid token, 400 for used/expired/duplicate, 403 for email mismatch
+  - Transaction includes: check invite, check user, add member, mark invite used, get account details
+---

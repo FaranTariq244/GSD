@@ -12,7 +12,7 @@
 - [x] Implement join flow for invited members
 
 ### M2 — Tasks CRUD + Board UI
-- [ ] Implement GET /board endpoint
+- [x] Implement GET /board endpoint
 - [ ] Implement task CRUD endpoints (GET /tasks, POST /tasks, PATCH /tasks/:id, DELETE /tasks/:id)
 - [ ] Build board columns UI component
 - [ ] Build task card component with tags, priority, due date, assignees
