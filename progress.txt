@@ -418,3 +418,26 @@
   - Environment variables: S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME
   - Multer will be used for handling multipart/form-data file uploads in attachment endpoints
 ---
+
+## Iteration 20 - Implement POST /tasks/:id/attachments endpoint
+- Created POST /tasks/:id/attachments endpoint for uploading file attachments to tasks
+- Endpoint uses multer middleware with memory storage to handle multipart/form-data uploads
+- Validates user access to task via board membership before allowing upload
+- Uploads file to S3-compatible storage and stores metadata in attachments table
+- Returns created attachment with uploader information
+- Files changed:
+  - packages/backend/src/routes/attachments.ts (new file with POST endpoint)
+  - packages/backend/src/index.ts (registered attachments routes)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Multer configuration: Use memoryStorage() with 10MB file size limit for uploads
+  - Multer middleware: upload.single('file') for single file upload, access via req.file
+  - File upload pattern: Validate access -> generate storage key -> upload to S3 -> insert DB record
+  - Attachments table: id, task_id, uploader_id, original_filename, mime_type, size_bytes, storage_key, thumbnail_key, created_at
+  - File metadata from multer: req.file.originalname, req.file.mimetype, req.file.size, req.file.buffer
+  - Storage key generation: generateStorageKey() creates unique key with timestamp and random ID
+  - Response format: { attachment: { ...attachment_fields, uploader: { id, name, email } } }
+  - HTTP status codes: 201 for success, 400 for missing file, 404 for task not found, 500 for upload errors
+  - Route registration: app.use('/api', attachmentsRoutes) to handle /tasks/:id/attachments path
+  - TypeScript fix: Handle req.params.id as string | string[] with Array.isArray check
+---
