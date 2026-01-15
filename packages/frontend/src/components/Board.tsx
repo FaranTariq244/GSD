@@ -46,7 +46,9 @@ export function Board() {
   const [dropTarget, setDropTarget] = useState<{ column: Column; position: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('');
+  const [tagFilter, setTagFilter] = useState<string>('');
   const [members, setMembers] = useState<Member[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
 
   useEffect(() => {
     fetchMembers();
@@ -54,7 +56,7 @@ export function Board() {
 
   useEffect(() => {
     fetchTasks();
-  }, [searchQuery, assigneeFilter]);
+  }, [searchQuery, assigneeFilter, tagFilter]);
 
   const fetchMembers = async () => {
     try {
@@ -85,6 +87,9 @@ export function Board() {
       if (assigneeFilter) {
         params.append('assignee', assigneeFilter);
       }
+      if (tagFilter) {
+        params.append('tag', tagFilter);
+      }
 
       const url = `/api/tasks${params.toString() ? '?' + params.toString() : ''}`;
       const response = await fetch(url, {
@@ -97,6 +102,13 @@ export function Board() {
 
       const data = await response.json();
       setTasks(data.tasks || []);
+
+      // Extract unique tags from all tasks for filter dropdown
+      const tagsSet = new Set<string>();
+      (data.tasks || []).forEach((task: Task) => {
+        task.tags.forEach(tag => tagsSet.add(tag));
+      });
+      setAllTags(Array.from(tagsSet).sort());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
@@ -232,6 +244,18 @@ export function Board() {
           {members.map((member) => (
             <option key={member.id} value={member.id}>
               {member.name}
+            </option>
+          ))}
+        </select>
+        <select
+          className="tag-filter"
+          value={tagFilter}
+          onChange={(e) => setTagFilter(e.target.value)}
+        >
+          <option value="">All Tags</option>
+          {allTags.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
             </option>
           ))}
         </select>

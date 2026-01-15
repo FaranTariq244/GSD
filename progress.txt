@@ -552,3 +552,24 @@
   - No debouncing implemented yet - fires on every keystroke (could be optimized with useDebounce hook if needed)
   - Search is live: Results update immediately as user types
 ---
+
+## Iteration 26 - Implement filter by assignee
+- Added assignee filter dropdown to Board component topbar
+- Fetches list of account members using existing GET /account/members endpoint
+- Added Member interface and members state to Board component
+- Updated fetchTasks to include assignee query parameter when filter is selected
+- Added useEffect dependency on assigneeFilter to refetch tasks when filter changes
+- Files changed:
+  - packages/frontend/src/components/Board.tsx (added Member interface, assigneeFilter state, members state, fetchMembers function, updated fetchTasks, added assignee dropdown)
+  - packages/frontend/src/components/Board.css (added assignee-filter styles with hover and focus states)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Assignee filter pattern: Fetch members on mount, store in state, populate dropdown options
+  - Backend already supports assignee parameter: GET /tasks?assignee=userId uses EXISTS subquery on task_assignees table
+  - Filter dropdown UI: Use select element with "All Assignees" default option, show member names
+  - Multiple filters: URLSearchParams cleanly handles multiple query parameters (search + assignee)
+  - Dropdown styling: Match search input styling for consistency (border, padding, focus states)
+  - Member fetching: Use separate useEffect with empty dependency array to fetch once on mount
+  - Filter state: Empty string ('') means no filter, user ID string means filter by that user
+  - Board topbar layout: Flex with gap, search input grows (flex: 1, max-width), dropdown has fixed min-width
+---

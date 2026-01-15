@@ -39,7 +39,7 @@
 ### M5 — Filters + Polish
 - [x] Implement search by title filter
 - [x] Implement filter by assignee
-- [ ] Implement filter by tag
+- [x] Implement filter by tag
 - [ ] Add empty states for columns
 - [ ] Add loading states
 - [ ] Add onboarding hints
