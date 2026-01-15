@@ -4,3 +4,20 @@
 (patterns discovered during implementation)
 
 ---
+
+## Iteration 1 - Set up project structure
+- Created monorepo using npm workspaces with packages/backend and packages/frontend
+- Backend: Node.js + TypeScript + Express with basic health endpoint
+- Frontend: Vite + React 19 + TypeScript (scaffolded with create-vite)
+- Files changed:
+  - Root: package.json (workspace config), .gitignore, README.md, PRD.md (added task checklist)
+  - Backend: package.json, tsconfig.json, src/index.ts
+  - Frontend: All Vite scaffolded files (updated package.json name to @gsd/frontend)
+- Learnings for future iterations:
+  - Project uses npm workspaces for monorepo structure
+  - Backend runs on port 3000 by default
+  - Frontend runs on port 5173 (Vite default)
+  - Test command returns exit 0 for now (no tests yet)
+  - Typecheck uses `tsc --noEmit` across both packages
+  - PRD.md now has task checklist at the top (added in this iteration)
+---
