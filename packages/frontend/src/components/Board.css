@@ -2,6 +2,34 @@
   padding: 20px;
   height: 100vh;
   overflow-x: auto;
+  position: relative;
+}
+
+.today-limit-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #dc2626;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .board-loading,
@@ -29,6 +57,11 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.2s ease;
+}
+
+.board-column.drag-over {
+  background: #e5e7eb;
 }
 
 .column-header {
@@ -60,6 +93,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 100px;
 }
 
 .column-empty {

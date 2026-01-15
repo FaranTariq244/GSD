@@ -462,6 +462,172 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// POST /tasks/:id/move - Move a task to a new column/position
+router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) => {
+  const userId = req.userId!;
+  const taskId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+  const { to_column, to_position } = req.body;
+
+  if (isNaN(taskId)) {
+    return res.status(400).json({ error: 'Invalid task ID' });
+  }
+
+  // Validate required fields
+  if (!to_column || typeof to_column !== 'string') {
+    return res.status(400).json({ error: 'to_column is required' });
+  }
+
+  if (to_position === undefined || typeof to_position !== 'number') {
+    return res.status(400).json({ error: 'to_position is required and must be a number' });
+  }
+
+  // Validate column
+  if (!VALID_COLUMNS.includes(to_column)) {
+    return res.status(400).json({
+      error: `Invalid column. Must be one of: ${VALID_COLUMNS.join(', ')}`
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Verify the task exists and user has access to it (via board membership)
+    const taskResult = await client.query(
+      `SELECT t.id, t.board_id, t.column, t.position
+       FROM tasks t
+       INNER JOIN boards b ON t.board_id = b.id
+       INNER JOIN account_members am ON b.account_id = am.account_id
+       WHERE t.id = $1 AND am.user_id = $2`,
+      [taskId, userId]
+    );
+
+    if (taskResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const task = taskResult.rows[0];
+    const fromColumn = task.column;
+    const fromPosition = task.position;
+    const boardId = task.board_id;
+
+    // If moving to "today" column, check the max 3 limit
+    if (to_column === 'today' && fromColumn !== 'today') {
+      const todayCountResult = await client.query(
+        `SELECT COUNT(*) as count FROM tasks WHERE board_id = $1 AND column = 'today'`,
+        [boardId]
+      );
+      const todayCount = parseInt(todayCountResult.rows[0].count);
+
+      if (todayCount >= 3) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: 'Today is limited to 3 tasks. Move one out first.',
+          code: 'TODAY_LIMIT_REACHED'
+        });
+      }
+    }
+
+    // If moving within the same column, reorder tasks
+    if (fromColumn === to_column) {
+      // Moving within same column - shift positions
+      if (fromPosition < to_position) {
+        // Moving down: shift tasks between old and new position up
+        await client.query(
+          `UPDATE tasks
+           SET position = position - 1
+           WHERE board_id = $1 AND column = $2 AND position > $3 AND position <= $4`,
+          [boardId, to_column, fromPosition, to_position]
+        );
+      } else if (fromPosition > to_position) {
+        // Moving up: shift tasks between new and old position down
+        await client.query(
+          `UPDATE tasks
+           SET position = position + 1
+           WHERE board_id = $1 AND column = $2 AND position >= $3 AND position < $4`,
+          [boardId, to_column, to_position, fromPosition]
+        );
+      }
+    } else {
+      // Moving to different column
+      // Shift tasks in old column up
+      await client.query(
+        `UPDATE tasks
+         SET position = position - 1
+         WHERE board_id = $1 AND column = $2 AND position > $3`,
+        [boardId, fromColumn, fromPosition]
+      );
+
+      // Shift tasks in new column down
+      await client.query(
+        `UPDATE tasks
+         SET position = position + 1
+         WHERE board_id = $1 AND column = $2 AND position >= $3`,
+        [boardId, to_column, to_position]
+      );
+    }
+
+    // Update the task's column and position
+    await client.query(
+      `UPDATE tasks
+       SET column = $1, position = $2, updated_at = NOW()
+       WHERE id = $3`,
+      [to_column, to_position, taskId]
+    );
+
+    await client.query('COMMIT');
+
+    // Fetch the updated task with assignees and tags
+    const updatedTaskResult = await pool.query(
+      `SELECT id, board_id, title, description, column, position, priority, due_date, created_by, created_at, updated_at
+       FROM tasks
+       WHERE id = $1`,
+      [taskId]
+    );
+
+    const updatedTask = updatedTaskResult.rows[0];
+
+    const assigneesResult = await pool.query(
+      `SELECT u.id, u.name, u.email
+       FROM users u
+       INNER JOIN task_assignees ta ON u.id = ta.user_id
+       WHERE ta.task_id = $1`,
+      [taskId]
+    );
+
+    const tagsResult = await pool.query(
+      `SELECT tag FROM task_tags WHERE task_id = $1`,
+      [taskId]
+    );
+
+    const completeTask = {
+      id: updatedTask.id,
+      board_id: updatedTask.board_id,
+      title: updatedTask.title,
+      description: updatedTask.description,
+      column: updatedTask.column,
+      position: updatedTask.position,
+      priority: updatedTask.priority,
+      due_date: updatedTask.due_date,
+      assignees: assigneesResult.rows,
+      tags: tagsResult.rows.map((row) => row.tag),
+      created_by: updatedTask.created_by,
+      created_at: updatedTask.created_at,
+      updated_at: updatedTask.updated_at
+    };
+
+    return res.status(200).json({ task: completeTask });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error moving task:', error);
+    return res.status(500).json({ error: 'Failed to move task' });
+  } finally {
+    client.release();
+  }
+});
+
 // DELETE /tasks/:id - Delete a task
 router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;

@@ -3,13 +3,18 @@
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   padding: 12px;
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.2s;
 }
 
 .task-card:hover {
   border-color: #3b82f6;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.task-card:active {
+  cursor: grabbing;
+  opacity: 0.7;
 }
 
 .task-card-header {

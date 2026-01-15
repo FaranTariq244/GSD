@@ -20,7 +20,7 @@
 - [x] Implement task editing (tags, priority, due date, multi-assignees)
 
 ### M3 — Drag/Drop + Today Limit
-- [ ] Implement drag and drop for tasks across columns
+- [x] Implement drag and drop for tasks across columns
 - [ ] Implement drag and drop reordering within columns
 - [ ] Implement POST /tasks/:id/move endpoint with Today max 3 validation
 - [ ] Add UI message when Today limit is reached

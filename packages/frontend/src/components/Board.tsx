@@ -35,6 +35,8 @@ export function Board() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [todayLimitMessage, setTodayLimitMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -67,6 +69,64 @@ export function Board() {
       .sort((a, b) => a.position - b.position);
   };
 
+  const handleDragStart = (task: Task) => (e: React.DragEvent) => {
+    setDraggedTask(task);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (targetColumn: Column) => {
+    if (!draggedTask) return;
+
+    // Calculate new position (append to end of column)
+    const columnTasks = getTasksForColumn(targetColumn);
+    const newPosition = columnTasks.length;
+
+    // Don't do anything if dropping in same position
+    if (draggedTask.column === targetColumn && draggedTask.position === newPosition) {
+      setDraggedTask(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${draggedTask.id}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          to_column: targetColumn,
+          to_position: newPosition,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        if (data.code === 'TODAY_LIMIT_REACHED') {
+          setTodayLimitMessage(data.error);
+          setTimeout(() => setTodayLimitMessage(null), 4000);
+        } else {
+          throw new Error(data.error || 'Failed to move task');
+        }
+      } else {
+        // Refresh tasks to get updated positions
+        await fetchTasks();
+      }
+    } catch (err) {
+      console.error('Error moving task:', err);
+      setError(err instanceof Error ? err.message : 'Failed to move task');
+    } finally {
+      setDraggedTask(null);
+    }
+  };
+
   if (loading) {
     return <div className="board-loading">Loading board...</div>;
   }
@@ -77,11 +137,22 @@ export function Board() {
 
   return (
     <div className="board">
+      {todayLimitMessage && (
+        <div className="today-limit-message">
+          {todayLimitMessage}
+        </div>
+      )}
+
       <div className="board-columns">
         {COLUMNS.map(column => {
           const columnTasks = getTasksForColumn(column.id);
           return (
-            <div key={column.id} className="board-column">
+            <div
+              key={column.id}
+              className="board-column"
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop(column.id)}
+            >
               <div className="column-header">
                 <h2 className="column-title">{column.title}</h2>
                 {column.maxTasks && (
@@ -99,6 +170,8 @@ export function Board() {
                       key={task.id}
                       task={task}
                       onClick={() => setSelectedTask(task)}
+                      onDragStart={handleDragStart(task)}
+                      onDragEnd={handleDragEnd}
                     />
                   ))
                 )}
