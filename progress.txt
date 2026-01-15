@@ -159,3 +159,25 @@
   - HTTP status codes: 404 if no board found, 500 for server errors
   - Response format: { board: { id, account_id, name, created_at } }
 ---
+
+## Iteration 9 - Implement task CRUD endpoints
+- Created GET /tasks endpoint with support for query filters (column, assignee, tag, search)
+- Created POST /tasks endpoint that creates tasks with default column 'inbox' and default priority 'normal'
+- Created PATCH /tasks/:id endpoint that updates task fields, assignees, and tags
+- Created DELETE /tasks/:id endpoint that deletes tasks with cascade to assignees, tags, comments, attachments
+- Files changed:
+  - packages/backend/src/routes/tasks.ts (new file with all 4 endpoints)
+  - packages/backend/src/index.ts (registered tasks routes)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Valid columns: 'goals', 'inbox', 'today', 'wait', 'finished', 'someday'
+  - Valid priorities: 'hot', 'warm', 'normal', 'cold'
+  - Tasks support: title (required), description, tags (array), priority, due_date, assignee_ids (array)
+  - POST /tasks automatically calculates next position in column (max + 1)
+  - GET /tasks returns tasks with nested assignees and tags arrays
+  - All endpoints verify user access via board membership (joins with account_members)
+  - PATCH /tasks replaces assignees and tags completely (delete then insert)
+  - DELETE /tasks cascades to task_assignees, task_tags, comments, attachments (DB foreign keys)
+  - Filter patterns: column (exact match), assignee (EXISTS subquery), tag (EXISTS subquery), search (ILIKE for title)
+  - Task response format includes: id, board_id, title, description, column, position, priority, due_date, assignees[], tags[], created_by, created_at, updated_at
+---
