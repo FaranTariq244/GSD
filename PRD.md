@@ -33,7 +33,7 @@
 - [x] Implement POST /tasks/:id/attachments endpoint
 - [x] Implement GET /attachments/:id endpoint
 - [x] Implement DELETE /attachments/:id endpoint
-- [ ] Build attachments UI with image previews
+- [x] Build attachments UI with image previews
 - [ ] Implement image thumbnail generation
 
 ### M5 — Filters + Polish

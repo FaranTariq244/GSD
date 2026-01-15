@@ -34,6 +34,22 @@ interface Comment {
   created_at: string;
 }
 
+interface Attachment {
+  id: string;
+  task_id: string;
+  original_filename: string;
+  mime_type: string;
+  size_bytes: number;
+  storage_key: string;
+  download_url: string;
+  uploader: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  created_at: string;
+}
+
 interface TaskDetailModalProps {
   task: Task;
   onClose: () => void;
@@ -62,6 +78,9 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
   const [comments, setComments] = useState<Comment[]>([]);
   const [newCommentBody, setNewCommentBody] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState(task.title);
@@ -135,6 +154,25 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
     };
 
     fetchComments();
+  }, [task.id]);
+
+  useEffect(() => {
+    // Fetch attachments for the task
+    const fetchAttachments = async () => {
+      try {
+        const response = await fetch(`/api/tasks/${task.id}/attachments`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAttachments(data.attachments || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch attachments:', error);
+      }
+    };
+
+    fetchAttachments();
   }, [task.id]);
 
   const handleSave = async () => {
@@ -231,6 +269,72 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
     } finally {
       setIsSubmittingComment(false);
     }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAttachment(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/tasks/${task.id}/attachments`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload attachment');
+      }
+
+      const data = await response.json();
+      setAttachments(prev => [...prev, data.attachment]);
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error uploading attachment:', error);
+      alert('Failed to upload attachment. Please try again.');
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!confirm('Are you sure you want to delete this attachment?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/attachments/${attachmentId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete attachment');
+      }
+
+      setAttachments(prev => prev.filter(a => a.id !== attachmentId));
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      alert('Failed to delete attachment. Please try again.');
+    }
+  };
+
+  const isImage = (mimeType: string) => {
+    return mimeType.startsWith('image/');
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const getInitials = (name: string) => {
@@ -411,10 +515,87 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
             </div>
           </section>
 
-          {/* Attachments Section (placeholder) */}
+          {/* Attachments Section */}
           <section className="modal-section">
             <h3 className="section-title">Attachments</h3>
-            <div className="text-muted">No attachments</div>
+
+            {attachments.length === 0 ? (
+              <div className="text-muted">No attachments</div>
+            ) : (
+              <div className="attachments-grid">
+                {attachments.map(attachment => (
+                  <div key={attachment.id} className="attachment-item">
+                    {isImage(attachment.mime_type) ? (
+                      <div className="attachment-image-preview">
+                        <img
+                          src={attachment.download_url}
+                          alt={attachment.original_filename}
+                          className="attachment-image"
+                        />
+                        <div className="attachment-overlay">
+                          <a
+                            href={attachment.download_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="attachment-action"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View
+                          </a>
+                          <button
+                            className="attachment-action attachment-delete"
+                            onClick={() => handleDeleteAttachment(attachment.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="attachment-file">
+                        <div className="attachment-file-icon">📄</div>
+                        <div className="attachment-file-info">
+                          <div className="attachment-file-name">{attachment.original_filename}</div>
+                          <div className="attachment-file-size">{formatFileSize(attachment.size_bytes)}</div>
+                        </div>
+                        <div className="attachment-file-actions">
+                          <a
+                            href={attachment.download_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="attachment-action"
+                          >
+                            Download
+                          </a>
+                          <button
+                            className="attachment-action attachment-delete"
+                            onClick={() => handleDeleteAttachment(attachment.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="attachment-uploader">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+                disabled={isUploadingAttachment}
+              />
+              <button
+                className="btn btn-secondary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAttachment}
+              >
+                {isUploadingAttachment ? 'Uploading...' : 'Add Attachment'}
+              </button>
+            </div>
           </section>
 
           {/* Comments Section */}

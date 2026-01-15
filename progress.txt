@@ -459,3 +459,23 @@
   - Query includes uploader information (JOIN to users table) for display purposes
   - Presigned URLs expire after 1 hour (configured in storage.ts getDownloadUrl function)
 ---
+
+## Iteration 22 - Implement DELETE /attachments/:id endpoint
+- Created DELETE /attachments/:id endpoint to delete file attachments from tasks
+- Endpoint validates user access to task via board membership before allowing deletion
+- Deletes file from S3-compatible storage using deleteFile function
+- Deletes attachment record from database after successful file deletion
+- Returns 204 No Content on successful deletion
+- Files changed:
+  - packages/backend/src/routes/attachments.ts (added DELETE endpoint, imported deleteFile)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Attachment deletion pattern: Verify access via task->board->account_members -> delete from S3 -> delete from DB
+  - Delete from storage first before DB to ensure cleanup even if DB deletion fails
+  - Response status: 204 No Content (standard for successful DELETE with no response body)
+  - HTTP status codes: 204 for success, 404 for not found, 500 for server errors
+  - Access verification uses same JOIN pattern as GET /attachments/:id (attachments -> tasks -> boards -> account_members)
+  - Query only fetches id and storage_key (minimal fields needed for deletion)
+  - deleteFile function from storage.ts uses DeleteObjectCommand from AWS SDK
+  - No transaction needed: S3 deletion first, then DB deletion (S3 has no rollback)
+---
