@@ -37,7 +37,7 @@
 - [x] Implement image thumbnail generation
 
 ### M5 — Filters + Polish
-- [ ] Implement search by title filter
+- [x] Implement search by title filter
 - [ ] Implement filter by assignee
 - [ ] Implement filter by tag
 - [ ] Add empty states for columns

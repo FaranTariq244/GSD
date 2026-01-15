@@ -505,3 +505,30 @@
   - Attachment grid hover effects: Image overlay with gradient background, opacity transition on hover
   - File input ref pattern: useRef for file input, trigger click programmatically, reset value after upload
 ---
+
+## Iteration 24 - Implement image thumbnail generation
+- Installed sharp package for image processing (200px width thumbnails)
+- Added generateThumbnail function to storage.ts that resizes images to 200px width with aspect ratio preservation
+- Updated POST /tasks/:id/attachments endpoint to generate and upload thumbnails for image files
+- Updated GET /tasks/:id/attachments endpoint to include thumbnail_url field with presigned URLs
+- Updated GET /attachments/:id endpoint to include thumbnail_url in response
+- Updated DELETE /attachments/:id endpoint to delete both original file and thumbnail from storage
+- Updated frontend Attachment interface to include thumbnail_url field
+- Updated frontend image rendering to use thumbnail_url when available (fallback to download_url)
+- Files changed:
+  - packages/backend/package.json (added sharp dependency)
+  - packages/backend/src/storage.ts (imported sharp, added generateThumbnail function)
+  - packages/backend/src/routes/attachments.ts (generate/upload thumbnails on POST, return thumbnail URLs on GET, delete thumbnails on DELETE)
+  - packages/frontend/src/components/TaskDetailModal.tsx (added thumbnail_url to Attachment interface, use thumbnail for image preview)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Sharp library: Fast image processing for Node.js, works well with buffers (resize, convert format, compress)
+  - Thumbnail generation: 200px width with aspect ratio preservation using fit: 'inside' and withoutEnlargement: true
+  - Thumbnail format: Convert all images to JPEG with quality 80 for consistent format and smaller file size
+  - Thumbnail storage key pattern: Add 'thumb-' prefix to original storage key for easy identification
+  - Thumbnail generation is conditional: Only generate for image MIME types (mime_type.startsWith('image/'))
+  - Frontend pattern: Use thumbnail_url || download_url as fallback for images without thumbnails
+  - Delete pattern: Delete thumbnail from storage before deleting DB record (same as original file)
+  - Presigned URLs: Generated for both original files and thumbnails, valid for 1 hour
+  - Performance: Thumbnails reduce bandwidth usage for image previews in UI (200px vs full resolution)
+---

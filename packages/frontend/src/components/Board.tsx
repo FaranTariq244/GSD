@@ -38,16 +38,24 @@ export function Board() {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [todayLimitMessage, setTodayLimitMessage] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ column: Column; position: number } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [searchQuery]);
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/tasks', {
+
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+
+      const url = `/api/tasks${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url, {
         credentials: 'include',
       });
 
@@ -174,6 +182,16 @@ export function Board() {
           {todayLimitMessage}
         </div>
       )}
+
+      <div className="board-topbar">
+        <input
+          type="text"
+          placeholder="Search tasks by title..."
+          className="search-input"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
 
       <div className="board-columns">
         {COLUMNS.map(column => {
