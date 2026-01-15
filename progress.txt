@@ -85,3 +85,42 @@
   - Endpoint returns 404 if user not found, 500 for server errors
   - Response format matches signup/login: { user: { id, name, email, created_at } }
 ---
+
+## Iteration 5 - Create account automatically on signup with single board
+- Modified POST /auth/signup to create account, add user as owner, and create board in single transaction
+- Uses database transaction (BEGIN/COMMIT/ROLLBACK) to ensure atomicity
+- Creates account with name format: "{user_name}'s Team"
+- Adds user to account_members table with role 'owner'
+- Creates default board named "Team Board"
+- Files changed:
+  - packages/backend/src/routes/auth.ts (wrapped signup logic in transaction, added account/board creation)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Use pool.connect() to get a client for transactions
+  - Transaction pattern: BEGIN -> operations -> COMMIT/ROLLBACK -> finally release()
+  - Account creation automatically creates: account -> account_members (owner) -> board
+  - Default naming: "{user_name}'s Team" for account, "Team Board" for board
+  - Always release database client in finally block
+---
+
+## Iteration 6 - Implement member invite system
+- Created invites table migration to store invite tokens with email, account, and expiration
+- Created POST /account/invite endpoint that generates secure invite tokens
+- Endpoint validates user is a member of an account before allowing invites
+- Prevents duplicate invites for same email to same account
+- Prevents inviting users who are already members
+- Generates secure random 32-byte hex token using crypto.randomBytes
+- Invites expire after 7 days
+- Files changed:
+  - packages/backend/migrations/2_add_invites_table.sql (new migration)
+  - packages/backend/src/routes/account.ts (new file with invite endpoint)
+  - packages/backend/src/index.ts (registered account routes)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Invite system uses invites table with token, email, account_id, invited_by, expires_at, used_at
+  - Token generation: crypto.randomBytes(32).toString('hex') for secure random tokens
+  - Invite expiration: 7 days from creation (matches JWT token expiration)
+  - Validation checks: user is member, target not already member, no active invite exists
+  - Email normalization: lowercase and trim before storing/comparing
+  - Returns invite object with id, email, token, created_at, expires_at
+---
