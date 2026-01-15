@@ -532,3 +532,23 @@
   - Presigned URLs: Generated for both original files and thumbnails, valid for 1 hour
   - Performance: Thumbnails reduce bandwidth usage for image previews in UI (200px vs full resolution)
 ---
+
+## Iteration 25 - Implement search by title filter
+- Added search by title filter to Board component
+- Created search input in board topbar that filters tasks by title using backend API
+- Modified fetchTasks to accept search query parameter and append to API URL
+- Added useEffect dependency on searchQuery to refetch tasks when search changes
+- Files changed:
+  - packages/frontend/src/components/Board.tsx (added searchQuery state, modified fetchTasks, added search input UI)
+  - packages/frontend/src/components/Board.css (added board-topbar and search-input styles)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Search pattern: Use controlled input with state, debounce by using useEffect with searchQuery dependency
+  - Backend already supports search parameter: GET /tasks?search=query uses ILIKE for case-insensitive title search
+  - URLSearchParams: Clean pattern for building query strings with conditional parameters
+  - Search UI placement: Topbar above columns with max-width 400px for search input
+  - Board layout: Changed to flex column layout to accommodate topbar + columns
+  - Search input styling: Focus state with blue border and subtle shadow for better UX
+  - No debouncing implemented yet - fires on every keystroke (could be optimized with useDebounce hook if needed)
+  - Search is live: Results update immediately as user types
+---
