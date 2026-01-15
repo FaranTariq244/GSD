@@ -42,6 +42,7 @@ interface Attachment {
   size_bytes: number;
   storage_key: string;
   download_url: string;
+  thumbnail_url: string | null;
   uploader: {
     id: string;
     name: string;
@@ -528,7 +529,7 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
                     {isImage(attachment.mime_type) ? (
                       <div className="attachment-image-preview">
                         <img
-                          src={attachment.download_url}
+                          src={attachment.thumbnail_url || attachment.download_url}
                           alt={attachment.original_filename}
                           className="attachment-image"
                         />

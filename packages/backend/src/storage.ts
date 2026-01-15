@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
+import sharp from 'sharp';
 
 // S3-compatible storage client (works with AWS S3, MinIO, Cloudflare R2, etc.)
 const s3Client = new S3Client({
@@ -61,4 +62,38 @@ export async function deleteFile(storageKey: string): Promise<void> {
   });
 
   await s3Client.send(command);
+}
+
+/**
+ * Generate a thumbnail for an image file
+ * Returns the thumbnail buffer and storage key, or null if not an image
+ */
+export async function generateThumbnail(
+  buffer: Buffer,
+  originalStorageKey: string,
+  mimeType: string
+): Promise<{ buffer: Buffer; storageKey: string } | null> {
+  // Only generate thumbnails for images
+  if (!mimeType.startsWith('image/')) {
+    return null;
+  }
+
+  try {
+    // Generate 200px width thumbnail (maintains aspect ratio)
+    const thumbnailBuffer = await sharp(buffer)
+      .resize(200, null, {
+        withoutEnlargement: true, // Don't upscale small images
+        fit: 'inside',
+      })
+      .jpeg({ quality: 80 }) // Convert to JPEG for consistent format and compression
+      .toBuffer();
+
+    // Generate storage key for thumbnail (add 'thumb-' prefix)
+    const thumbnailKey = `thumb-${originalStorageKey}`;
+
+    return { buffer: thumbnailBuffer, storageKey: thumbnailKey };
+  } catch (error) {
+    console.error('Error generating thumbnail:', error);
+    return null;
+  }
 }

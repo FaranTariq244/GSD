@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import pool from '../db.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import { uploadFile, generateStorageKey, getDownloadUrl, deleteFile } from '../storage.js';
+import { uploadFile, generateStorageKey, getDownloadUrl, deleteFile, generateThumbnail } from '../storage.js';
 
 const router = express.Router();
 
@@ -52,6 +52,7 @@ router.get('/tasks/:id/attachments', authenticate, async (req: AuthRequest, res)
     const attachments = await Promise.all(
       result.rows.map(async (row) => {
         const downloadUrl = await getDownloadUrl(row.storage_key);
+        const thumbnailUrl = row.thumbnail_key ? await getDownloadUrl(row.thumbnail_key) : null;
         return {
           id: row.id,
           task_id: row.task_id,
@@ -63,6 +64,7 @@ router.get('/tasks/:id/attachments', authenticate, async (req: AuthRequest, res)
           thumbnail_key: row.thumbnail_key,
           created_at: row.created_at,
           download_url: downloadUrl,
+          thumbnail_url: thumbnailUrl,
           uploader: {
             id: row.uploader_user_id,
             name: row.uploader_name,
@@ -110,12 +112,20 @@ router.post('/tasks/:id/attachments', authenticate, upload.single('file'), async
     const storageKey = generateStorageKey(req.file.originalname);
     await uploadFile(req.file.buffer, storageKey, req.file.mimetype);
 
+    // Generate and upload thumbnail if it's an image
+    let thumbnailKey: string | null = null;
+    const thumbnail = await generateThumbnail(req.file.buffer, storageKey, req.file.mimetype);
+    if (thumbnail) {
+      thumbnailKey = thumbnail.storageKey;
+      await uploadFile(thumbnail.buffer, thumbnailKey, 'image/jpeg');
+    }
+
     // Insert attachment record into database
     const result = await pool.query(
-      `INSERT INTO attachments (task_id, uploader_id, original_filename, mime_type, size_bytes, storage_key)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO attachments (task_id, uploader_id, original_filename, mime_type, size_bytes, storage_key, thumbnail_key)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, task_id, uploader_id, original_filename, mime_type, size_bytes, storage_key, thumbnail_key, created_at`,
-      [taskId, userId, req.file.originalname, req.file.mimetype, req.file.size, storageKey]
+      [taskId, userId, req.file.originalname, req.file.mimetype, req.file.size, storageKey, thumbnailKey]
     );
 
     // Fetch uploader information
@@ -166,6 +176,7 @@ router.get('/attachments/:id', authenticate, async (req: AuthRequest, res) => {
 
     // Generate presigned download URL
     const downloadUrl = await getDownloadUrl(row.storage_key);
+    const thumbnailUrl = row.thumbnail_key ? await getDownloadUrl(row.thumbnail_key) : null;
 
     const attachment = {
       id: row.id,
@@ -178,6 +189,7 @@ router.get('/attachments/:id', authenticate, async (req: AuthRequest, res) => {
       thumbnail_key: row.thumbnail_key,
       created_at: row.created_at,
       download_url: downloadUrl,
+      thumbnail_url: thumbnailUrl,
       uploader: {
         id: row.uploader_user_id,
         name: row.uploader_name,
@@ -203,7 +215,7 @@ router.delete('/attachments/:id', authenticate, async (req: AuthRequest, res) =>
   try {
     // Fetch attachment and verify user has access to the task via board membership
     const result = await pool.query(
-      `SELECT a.id, a.storage_key
+      `SELECT a.id, a.storage_key, a.thumbnail_key
        FROM attachments a
        INNER JOIN tasks t ON t.id = a.task_id
        INNER JOIN boards b ON b.id = t.board_id
@@ -220,6 +232,11 @@ router.delete('/attachments/:id', authenticate, async (req: AuthRequest, res) =>
 
     // Delete file from storage
     await deleteFile(attachment.storage_key);
+
+    // Delete thumbnail from storage if it exists
+    if (attachment.thumbnail_key) {
+      await deleteFile(attachment.thumbnail_key);
+    }
 
     // Delete attachment record from database
     await pool.query('DELETE FROM attachments WHERE id = $1', [attachmentId]);

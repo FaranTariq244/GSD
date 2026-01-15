@@ -34,7 +34,7 @@
 - [x] Implement GET /attachments/:id endpoint
 - [x] Implement DELETE /attachments/:id endpoint
 - [x] Build attachments UI with image previews
-- [ ] Implement image thumbnail generation
+- [x] Implement image thumbnail generation
 
 ### M5 — Filters + Polish
 - [ ] Implement search by title filter
