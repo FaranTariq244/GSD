@@ -143,3 +143,19 @@
   - HTTP status codes: 404 for invalid token, 400 for used/expired/duplicate, 403 for email mismatch
   - Transaction includes: check invite, check user, add member, mark invite used, get account details
 ---
+
+## Iteration 8 - Implement GET /board endpoint
+- Created GET /board endpoint that returns the single board for the authenticated user's account
+- Endpoint uses authenticate middleware and joins boards with account_members to verify user access
+- Returns board object with id, account_id, name, and created_at
+- Files changed:
+  - packages/backend/src/routes/board.ts (new file with GET /board endpoint)
+  - packages/backend/src/index.ts (registered board routes)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Board endpoint pattern: Join boards with account_members using user_id to get user's board
+  - Each account has exactly one board (enforced by UNIQUE constraint on account_id in boards table)
+  - Query uses INNER JOIN to ensure user is a member of the account before returning board
+  - HTTP status codes: 404 if no board found, 500 for server errors
+  - Response format: { board: { id, account_id, name, created_at } }
+---
