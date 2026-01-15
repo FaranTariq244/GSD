@@ -349,3 +349,21 @@
   - Route registration: Use app.use('/api', commentsRoutes) since route already includes full path '/tasks/:id/comments'
   - Task access verification: Same pattern as other task routes - join tasks -> boards -> account_members
 ---
+
+## Iteration 17 - Implement POST /tasks/:id/comments endpoint
+- Created POST /tasks/:id/comments endpoint to create new comments
+- Endpoint validates task access via board membership before allowing comment creation
+- Validates comment body is non-empty string
+- Returns created comment with author information
+- Files changed:
+  - packages/backend/src/routes/comments.ts (added POST endpoint)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Comment creation pattern: Verify task access -> validate body -> insert comment -> fetch author info -> return comment
+  - Body validation: Must be non-empty string after trimming whitespace
+  - Response format: { comment: { id, task_id, body, author: { id, name, email }, created_at } }
+  - HTTP status codes: 201 for successful creation, 400 for validation errors, 404 for task not found
+  - Comment body is trimmed before inserting to remove leading/trailing whitespace
+  - Created_at is set to NOW() in database for consistent server-side timestamps
+  - Author information is fetched separately after comment insert using userId from auth middleware
+---

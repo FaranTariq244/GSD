@@ -22,6 +22,18 @@ interface Member {
   email: string;
 }
 
+interface Comment {
+  id: string;
+  task_id: string;
+  body: string;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  created_at: string;
+}
+
 interface TaskDetailModalProps {
   task: Task;
   onClose: () => void;
@@ -47,6 +59,9 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newCommentBody, setNewCommentBody] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState(task.title);
@@ -102,6 +117,25 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
 
     fetchMembers();
   }, []);
+
+  useEffect(() => {
+    // Fetch comments for the task
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(`/api/tasks/${task.id}/comments`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setComments(data.comments || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch comments:', error);
+      }
+    };
+
+    fetchComments();
+  }, [task.id]);
 
   const handleSave = async () => {
     if (!editTitle.trim()) {
@@ -164,6 +198,39 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
         ? prev.filter(id => id !== memberId)
         : [...prev, memberId]
     );
+  };
+
+  const handleSubmitComment = async () => {
+    if (!newCommentBody.trim()) {
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          body: newCommentBody.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to post comment');
+      }
+
+      const data = await response.json();
+      setComments(prev => [...prev, data.comment]);
+      setNewCommentBody('');
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      alert('Failed to post comment. Please try again.');
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -350,10 +417,47 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
             <div className="text-muted">No attachments</div>
           </section>
 
-          {/* Comments Section (placeholder) */}
+          {/* Comments Section */}
           <section className="modal-section">
             <h3 className="section-title">Comments</h3>
-            <div className="text-muted">No comments yet</div>
+
+            {comments.length === 0 ? (
+              <div className="text-muted">No comments yet</div>
+            ) : (
+              <div className="comments-list">
+                {comments.map(comment => (
+                  <div key={comment.id} className="comment-item">
+                    <div className="comment-header">
+                      <div className="comment-avatar">
+                        {getInitials(comment.author.name)}
+                      </div>
+                      <div className="comment-meta">
+                        <span className="comment-author">{comment.author.name}</span>
+                        <span className="comment-date">{formatDateTime(comment.created_at)}</span>
+                      </div>
+                    </div>
+                    <div className="comment-body">{comment.body}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="comment-composer">
+              <textarea
+                className="comment-textarea"
+                value={newCommentBody}
+                onChange={(e) => setNewCommentBody(e.target.value)}
+                placeholder="Write a comment..."
+                rows={3}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={handleSubmitComment}
+                disabled={isSubmittingComment || !newCommentBody.trim()}
+              >
+                {isSubmittingComment ? 'Posting...' : 'Post Comment'}
+              </button>
+            </div>
           </section>
 
           {/* Edit/Save Buttons */}

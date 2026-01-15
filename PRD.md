@@ -28,7 +28,7 @@
 ### M4 — Comments + Attachments
 - [x] Implement GET /tasks/:id/comments endpoint
 - [x] Implement POST /tasks/:id/comments endpoint
-- [ ] Build comments UI component
+- [x] Build comments UI component
 - [ ] Set up file storage (S3/R2/MinIO)
 - [ ] Implement POST /tasks/:id/attachments endpoint
 - [ ] Implement GET /attachments/:id endpoint
