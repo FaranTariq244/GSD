@@ -1,0 +1,6 @@
+#progress Log
+
+## Learnings
+(patterns discovered during implementation)
+
+---
