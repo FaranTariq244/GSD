@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/account.js';
 import boardRoutes from './routes/board.js';
+import tasksRoutes from './routes/tasks.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/auth', authRoutes);
 app.use('/account', accountRoutes);
 app.use('/board', boardRoutes);
+app.use('/tasks', tasksRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

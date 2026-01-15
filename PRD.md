@@ -13,7 +13,7 @@
 
 ### M2 — Tasks CRUD + Board UI
 - [x] Implement GET /board endpoint
-- [ ] Implement task CRUD endpoints (GET /tasks, POST /tasks, PATCH /tasks/:id, DELETE /tasks/:id)
+- [x] Implement task CRUD endpoints (GET /tasks, POST /tasks, PATCH /tasks/:id, DELETE /tasks/:id)
 - [ ] Build board columns UI component
 - [ ] Build task card component with tags, priority, due date, assignees
 - [ ] Implement task detail modal/drawer
