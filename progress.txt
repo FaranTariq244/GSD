@@ -1,7 +1,12 @@
 #progress Log
 
 ## Learnings
-(patterns discovered during implementation)
+- Database: PostgreSQL with pg client library
+- Migration pattern: Custom SQL migration runner in src/migrate.ts
+- Database connection: Pool exported from src/db.ts, configured via environment variables
+- Migration files stored in packages/backend/migrations/ as .sql files
+- Run migrations with: npm run migrate (in backend package)
+- Database config: .env.example provides template for DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 ---
 
@@ -20,4 +25,22 @@
   - Test command returns exit 0 for now (no tests yet)
   - Typecheck uses `tsc --noEmit` across both packages
   - PRD.md now has task checklist at the top (added in this iteration)
+---
+
+## Iteration 2 - Set up database schema and migrations
+- Installed pg and @types/pg for PostgreSQL database client
+- Created comprehensive database schema covering all tables from PRD data model
+- Files changed:
+  - packages/backend/package.json (added pg, node-pg-migrate, @types/pg, and migrate script)
+  - packages/backend/migrations/1_initial_schema.sql (all 8 tables with indexes)
+  - packages/backend/src/db.ts (pool connection with env config)
+  - packages/backend/src/migrate.ts (custom migration runner)
+  - packages/backend/.env.example (database and server config template)
+- Learnings for future iterations:
+  - Tables: users, accounts, account_members, boards, tasks, task_assignees, task_tags, comments, attachments
+  - All tables follow PRD spec with proper foreign keys and cascade deletes
+  - Migration runner tracks applied migrations in a migrations table
+  - Migration runner uses transactions (BEGIN/COMMIT/ROLLBACK) for safety
+  - Indexes added for common query patterns (board_id, column, task_id, user_id, tag)
+  - Database can be initialized by running: npm run migrate (in backend package)
 ---
