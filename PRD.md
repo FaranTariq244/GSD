@@ -30,7 +30,7 @@
 - [x] Implement POST /tasks/:id/comments endpoint
 - [x] Build comments UI component
 - [x] Set up file storage (S3/R2/MinIO)
-- [ ] Implement POST /tasks/:id/attachments endpoint
+- [x] Implement POST /tasks/:id/attachments endpoint
 - [ ] Implement GET /attachments/:id endpoint
 - [ ] Implement DELETE /attachments/:id endpoint
 - [ ] Build attachments UI with image previews
