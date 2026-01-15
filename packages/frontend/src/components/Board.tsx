@@ -21,13 +21,13 @@ interface Task {
   updated_at: string;
 }
 
-const COLUMNS: Array<{ id: Column; title: string; maxTasks?: number }> = [
-  { id: 'goals', title: 'Goals / Projects / Top' },
-  { id: 'inbox', title: 'Inbox' },
-  { id: 'today', title: 'Today', maxTasks: 3 },
-  { id: 'wait', title: 'Wait / In-Progress (TEMP)' },
-  { id: 'finished', title: 'Finished (Archive)' },
-  { id: 'someday', title: 'Someday / Maybe' },
+const COLUMNS: Array<{ id: Column; title: string; maxTasks?: number; emptyMessage: string }> = [
+  { id: 'goals', title: 'Goals / Projects / Top', emptyMessage: 'No top-level goals yet. Drag important tasks here to prioritize them.' },
+  { id: 'inbox', title: 'Inbox', emptyMessage: 'Inbox is empty. New tasks will appear here by default.' },
+  { id: 'today', title: 'Today', maxTasks: 3, emptyMessage: 'Nothing scheduled for today. Drag up to 3 tasks here to focus on.' },
+  { id: 'wait', title: 'Wait / In-Progress (TEMP)', emptyMessage: 'No tasks in progress or waiting. Move tasks here when blocked or in progress.' },
+  { id: 'finished', title: 'Finished (Archive)', emptyMessage: 'No completed tasks yet. Finished tasks will be archived here.' },
+  { id: 'someday', title: 'Someday / Maybe', emptyMessage: 'No future tasks. Drag tasks here that you might want to do later.' },
 ];
 
 interface Member {
@@ -281,7 +281,7 @@ export function Board() {
               </div>
               <div className="column-tasks">
                 {columnTasks.length === 0 ? (
-                  <div className="column-empty">No tasks</div>
+                  <div className="column-empty">{column.emptyMessage}</div>
                 ) : (
                   columnTasks.map((task, index) => {
                     const showDropIndicator =

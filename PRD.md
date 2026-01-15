@@ -40,7 +40,7 @@
 - [x] Implement search by title filter
 - [x] Implement filter by assignee
 - [x] Implement filter by tag
-- [ ] Add empty states for columns
+- [x] Add empty states for columns
 - [ ] Add loading states
 - [ ] Add onboarding hints
 

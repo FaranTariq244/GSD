@@ -573,3 +573,24 @@
   - Filter state: Empty string ('') means no filter, user ID string means filter by that user
   - Board topbar layout: Flex with gap, search input grows (flex: 1, max-width), dropdown has fixed min-width
 ---
+
+## Iteration 27 - Implement filter by tag
+- Added tag filter dropdown to Board component topbar
+- Extracts unique tags from all tasks to populate dropdown options
+- Added tagFilter state and allTags state to Board component
+- Updated fetchTasks to include tag query parameter when filter is selected
+- Added useEffect dependency on tagFilter to refetch tasks when filter changes
+- Files changed:
+  - packages/frontend/src/components/Board.tsx (added tagFilter and allTags state, updated fetchTasks to extract tags and append tag param, added tag dropdown)
+  - packages/frontend/src/components/Board.css (added tag-filter styles matching assignee-filter)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Tag filter pattern: Extract unique tags from fetched tasks, populate dropdown dynamically
+  - Backend already supports tag parameter: GET /tasks?tag=tagName uses EXISTS subquery on task_tags table
+  - Tag extraction: Use Set to collect unique tags from all tasks, then convert to sorted array
+  - Tags are extracted after every fetchTasks call, so dropdown updates as tasks change
+  - Filter dropdown styling: Consistent with assignee filter (same padding, border, hover/focus states)
+  - Multiple filters work together: search + assignee + tag can be combined using URLSearchParams
+  - Tag filter uses empty string ('') for "All Tags" default, tag name string for specific tag
+  - Board topbar now has three filter controls: search input, assignee dropdown, tag dropdown
+---
