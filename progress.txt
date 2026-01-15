@@ -594,3 +594,23 @@
   - Tag filter uses empty string ('') for "All Tags" default, tag name string for specific tag
   - Board topbar now has three filter controls: search input, assignee dropdown, tag dropdown
 ---
+
+## Iteration 28 - Add empty states for columns
+- Enhanced empty state messages for all 6 columns with contextual, helpful text
+- Each column now has a specific empty message that explains its purpose and guides users
+- Updated COLUMNS configuration to include emptyMessage property for each column
+- Files changed:
+  - packages/frontend/src/components/Board.tsx (added emptyMessage to COLUMNS, updated JSX to use column.emptyMessage)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Empty state pattern: Provide contextual messages that guide users on what each column is for
+  - Goals column: "No top-level goals yet. Drag important tasks here to prioritize them."
+  - Inbox column: "Inbox is empty. New tasks will appear here by default."
+  - Today column: "Nothing scheduled for today. Drag up to 3 tasks here to focus on."
+  - Wait column: "No tasks in progress or waiting. Move tasks here when blocked or in progress."
+  - Finished column: "No completed tasks yet. Finished tasks will be archived here."
+  - Someday column: "No future tasks. Drag tasks here that you might want to do later."
+  - Empty messages are displayed in .column-empty div with centered text and gray color
+  - Messages explain both the current state (empty) and the intended use of the column
+  - Good UX: Empty states should be instructive, not just descriptive
+---

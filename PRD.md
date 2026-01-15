@@ -41,7 +41,7 @@
 - [x] Implement filter by assignee
 - [x] Implement filter by tag
 - [x] Add empty states for columns
-- [ ] Add loading states
+- [x] Add loading states
 - [ ] Add onboarding hints
 
 ## 1) Overview

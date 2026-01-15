@@ -98,6 +98,12 @@
   font-style: italic;
 }
 
+.loading-text {
+  color: #6b7280;
+  font-size: 14px;
+  padding: 12px 0;
+}
+
 .details-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -76,10 +76,13 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(true);
   const [newCommentBody, setNewCommentBody] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isLoadingAttachments, setIsLoadingAttachments] = useState(true);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,6 +126,7 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
     // Fetch account members for assignee selection
     const fetchMembers = async () => {
       try {
+        setIsLoadingMembers(true);
         const response = await fetch('/api/account/members', {
           credentials: 'include',
         });
@@ -132,6 +136,8 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
         }
       } catch (error) {
         console.error('Failed to fetch members:', error);
+      } finally {
+        setIsLoadingMembers(false);
       }
     };
 
@@ -142,6 +148,7 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
     // Fetch comments for the task
     const fetchComments = async () => {
       try {
+        setIsLoadingComments(true);
         const response = await fetch(`/api/tasks/${task.id}/comments`, {
           credentials: 'include',
         });
@@ -151,6 +158,8 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
         }
       } catch (error) {
         console.error('Failed to fetch comments:', error);
+      } finally {
+        setIsLoadingComments(false);
       }
     };
 
@@ -161,6 +170,7 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
     // Fetch attachments for the task
     const fetchAttachments = async () => {
       try {
+        setIsLoadingAttachments(true);
         const response = await fetch(`/api/tasks/${task.id}/attachments`, {
           credentials: 'include',
         });
@@ -170,6 +180,8 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
         }
       } catch (error) {
         console.error('Failed to fetch attachments:', error);
+      } finally {
+        setIsLoadingAttachments(false);
       }
     };
 
@@ -484,18 +496,22 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
               <div className="detail-item">
                 <label className="detail-label">Assignees</label>
                 {isEditing ? (
-                  <div className="assignees-select">
-                    {members.map(member => (
-                      <label key={member.id} className="assignee-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={editAssigneeIds.includes(member.id)}
-                          onChange={() => toggleAssignee(member.id)}
-                        />
-                        <span>{member.name}</span>
-                      </label>
-                    ))}
-                  </div>
+                  isLoadingMembers ? (
+                    <div className="loading-text">Loading...</div>
+                  ) : (
+                    <div className="assignees-select">
+                      {members.map(member => (
+                        <label key={member.id} className="assignee-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={editAssigneeIds.includes(member.id)}
+                            onChange={() => toggleAssignee(member.id)}
+                          />
+                          <span>{member.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <div className="detail-value">
                     {task.assignees.length > 0 ? (
@@ -520,7 +536,9 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
           <section className="modal-section">
             <h3 className="section-title">Attachments</h3>
 
-            {attachments.length === 0 ? (
+            {isLoadingAttachments ? (
+              <div className="loading-text">Loading attachments...</div>
+            ) : attachments.length === 0 ? (
               <div className="text-muted">No attachments</div>
             ) : (
               <div className="attachments-grid">
@@ -603,7 +621,9 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated }: TaskDetailModa
           <section className="modal-section">
             <h3 className="section-title">Comments</h3>
 
-            {comments.length === 0 ? (
+            {isLoadingComments ? (
+              <div className="loading-text">Loading comments...</div>
+            ) : comments.length === 0 ? (
               <div className="text-muted">No comments yet</div>
             ) : (
               <div className="comments-list">
