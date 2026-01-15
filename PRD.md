@@ -9,7 +9,7 @@
 - [x] Implement GET /me endpoint
 - [x] Create account automatically on signup with single board
 - [x] Implement member invite system (POST /account/invite)
-- [ ] Implement join flow for invited members
+- [x] Implement join flow for invited members
 
 ### M2 — Tasks CRUD + Board UI
 - [ ] Implement GET /board endpoint

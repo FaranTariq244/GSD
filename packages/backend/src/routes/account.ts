@@ -89,4 +89,119 @@ router.post('/invite', authenticate, async (req: AuthRequest, res: Response) => 
   }
 });
 
+// POST /account/join - Join an account using an invite token
+router.post('/join', authenticate, async (req: AuthRequest, res: Response) => {
+  const { token } = req.body;
+  const userId = req.userId!;
+
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({ error: 'Token is required' });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Get the invite and validate it
+    const inviteResult = await client.query(
+      `SELECT id, account_id, email, expires_at, used_at
+       FROM invites
+       WHERE token = $1`,
+      [token]
+    );
+
+    if (inviteResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Invalid invite token' });
+    }
+
+    const invite = inviteResult.rows[0];
+
+    // Check if invite is already used
+    if (invite.used_at !== null) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'This invite has already been used' });
+    }
+
+    // Check if invite is expired
+    if (new Date(invite.expires_at) < new Date()) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'This invite has expired' });
+    }
+
+    // Get the current user's email
+    const userResult = await client.query(
+      `SELECT email FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userEmail = userResult.rows[0].email;
+
+    // Verify that the user's email matches the invite email
+    if (userEmail.toLowerCase() !== invite.email.toLowerCase()) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'This invite is for a different email address' });
+    }
+
+    // Check if user is already a member of this account
+    const memberResult = await client.query(
+      `SELECT user_id FROM account_members
+       WHERE account_id = $1 AND user_id = $2`,
+      [invite.account_id, userId]
+    );
+
+    if (memberResult.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'You are already a member of this account' });
+    }
+
+    // Add user to account as member
+    await client.query(
+      `INSERT INTO account_members (account_id, user_id, role)
+       VALUES ($1, $2, 'member')`,
+      [invite.account_id, userId]
+    );
+
+    // Mark invite as used
+    await client.query(
+      `UPDATE invites
+       SET used_at = NOW()
+       WHERE id = $1`,
+      [invite.id]
+    );
+
+    // Get account details to return
+    const accountResult = await client.query(
+      `SELECT id, name, owner_id, created_at
+       FROM accounts
+       WHERE id = $1`,
+      [invite.account_id]
+    );
+
+    await client.query('COMMIT');
+
+    const account = accountResult.rows[0];
+    return res.status(200).json({
+      account: {
+        id: account.id,
+        name: account.name,
+        owner_id: account.owner_id,
+        created_at: account.created_at
+      }
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error joining account:', error);
+    return res.status(500).json({ error: 'Failed to join account' });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;
