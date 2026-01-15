@@ -5,7 +5,7 @@
 ### M1 — Auth + Account + Single Board
 - [x] Set up project structure (Node.js/TypeScript backend, React frontend)
 - [x] Set up database schema and migrations
-- [ ] Implement user signup/login (POST /auth/signup, /auth/login, /auth/logout)
+- [x] Implement user signup/login (POST /auth/signup, /auth/login, /auth/logout)
 - [ ] Implement GET /me endpoint
 - [ ] Create account automatically on signup with single board
 - [ ] Implement member invite system (POST /account/invite)
