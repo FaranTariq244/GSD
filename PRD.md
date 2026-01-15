@@ -16,7 +16,7 @@
 - [x] Implement task CRUD endpoints (GET /tasks, POST /tasks, PATCH /tasks/:id, DELETE /tasks/:id)
 - [x] Build board columns UI component
 - [x] Build task card component with tags, priority, due date, assignees
-- [ ] Implement task detail modal/drawer
+- [x] Implement task detail modal/drawer
 - [ ] Implement task editing (tags, priority, due date, multi-assignees)
 
 ### M3 — Drag/Drop + Today Limit

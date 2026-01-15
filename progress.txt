@@ -209,3 +209,25 @@
   - Column types: 'goals', 'inbox', 'today', 'wait', 'finished', 'someday'
   - Today column shows count/limit badge (X/3)
 ---
+## Iteration 11 - Build task card component with tags, priority, due date, assignees
+- Created TaskCard component displaying all task metadata in card format
+- Implemented priority indicator (colored dot with 4 priority levels)
+- Added tag display with max 2 visible tags and "+N" overflow indicator
+- Created assignee avatars with initials (stacked, max 3 visible)
+- Implemented due date formatting with relative dates (today, tomorrow, Xd, overdue)
+- Integrated TaskCard into Board component, replacing placeholder cards
+- Files changed:
+  - packages/frontend/src/components/TaskCard.tsx (new file)
+  - packages/frontend/src/components/TaskCard.css (new file)
+  - packages/frontend/src/components/Board.tsx (import and use TaskCard)
+  - packages/frontend/src/components/Board.css (removed placeholder styles)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Priority colors: hot=#dc2626 (red), warm=#f59e0b (orange), normal=#6b7280 (gray), cold=#3b82f6 (blue)
+  - Tag display pattern: Show first 2 tags, then "+N" indicator for remaining tags
+  - Assignee display pattern: Show first 3 avatars with 2-letter initials, then "+N" for remaining
+  - Due date formatting: Overdue shows "Xd ago" in red, today/tomorrow special labels, then relative days, then absolute date
+  - Card hover effect: border color changes to blue with shadow for better UX
+  - Task card cursor is pointer to indicate clickable (for future task detail modal)
+  - Assignee avatars are stacked with negative margin-left (-8px) for compact display
+---

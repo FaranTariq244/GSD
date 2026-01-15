@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import './Board.css';
 import { TaskCard } from './TaskCard';
 import './TaskCard.css';
+import { TaskDetailModal } from './TaskDetailModal';
 
 type Column = 'goals' | 'inbox' | 'today' | 'wait' | 'finished' | 'someday';
 
@@ -33,6 +34,7 @@ export function Board() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -93,7 +95,11 @@ export function Board() {
                   <div className="column-empty">No tasks</div>
                 ) : (
                   columnTasks.map(task => (
-                    <TaskCard key={task.id} task={task} />
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onClick={() => setSelectedTask(task)}
+                    />
                   ))
                 )}
               </div>
@@ -101,6 +107,13 @@ export function Board() {
           );
         })}
       </div>
+
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </div>
   );
 }
