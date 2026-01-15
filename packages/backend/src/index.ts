@@ -15,10 +15,10 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'gsd-kanban-api' });
 });
 
-app.use('/auth', authRoutes);
-app.use('/account', accountRoutes);
-app.use('/board', boardRoutes);
-app.use('/tasks', tasksRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/account', accountRoutes);
+app.use('/api/board', boardRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
