@@ -15,7 +15,7 @@ export function RichTextEditor({ value, onChange, placeholder, taskId }: RichTex
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; filename: string }>>([]);
+  const [_uploadedImages, setUploadedImages] = useState<Array<{ url: string; filename: string }>>([]);
 
   const insertTextAtCursor = (text: string) => {
     const textarea = textareaRef.current;

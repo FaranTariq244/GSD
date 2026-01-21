@@ -222,7 +222,7 @@ export function Board() {
     setDropTarget({ column: task.column, position: targetPosition });
   };
 
-  const handleTaskDrop = (task: Task) => (e: React.DragEvent) => {
+  const handleTaskDrop = (_task: Task) => (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
 

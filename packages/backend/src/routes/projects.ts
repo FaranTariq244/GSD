@@ -99,7 +99,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 // GET /projects/:id - Get a single project
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
-  const projectId = parseInt(req.params.id);
+  const projectId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
 
   if (isNaN(projectId)) {
     return res.status(400).json({ error: 'Invalid project ID' });
@@ -131,7 +131,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 // PATCH /projects/:id - Update a project
 router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
-  const projectId = parseInt(req.params.id);
+  const projectId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
   const { name, description } = req.body;
 
   if (isNaN(projectId)) {
@@ -203,7 +203,7 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 // DELETE /projects/:id - Delete a project
 router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
-  const projectId = parseInt(req.params.id);
+  const projectId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
 
   if (isNaN(projectId)) {
     return res.status(400).json({ error: 'Invalid project ID' });

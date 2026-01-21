@@ -22,7 +22,7 @@ export function Team() {
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
-  const [isLoadingInvites, setIsLoadingInvites] = useState(true);
+  const [_isLoadingInvites, setIsLoadingInvites] = useState(true);
 
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState('');
