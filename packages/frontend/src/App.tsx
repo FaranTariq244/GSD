@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { Board } from './components/Board';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
@@ -91,7 +92,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ProjectProvider>
+          <AppRoutes />
+        </ProjectProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -29,15 +29,15 @@ export function OnboardingHints() {
       </div>
       <div className="onboarding-hints-content">
         <div className="hint-item">
-          <span className="hint-icon">📥</span>
+          <span className="hint-icon">📋</span>
           <div className="hint-text">
-            <strong>Start with Inbox</strong> - New tasks appear in Inbox by default. Capture everything here first.
+            <strong>Start with Backlog</strong> - New tasks go to Backlog by default. Move them to Ready when ready to work.
           </div>
         </div>
         <div className="hint-item">
-          <span className="hint-icon">🎯</span>
+          <span className="hint-icon">🚀</span>
           <div className="hint-text">
-            <strong>Today Limit (Max 3)</strong> - Focus on 3 tasks each day. Drag tasks to the Today column to commit.
+            <strong>Track Progress</strong> - Move tasks through In Progress, Review/QA, and Ready to Ship as you work.
           </div>
         </div>
         <div className="hint-item">

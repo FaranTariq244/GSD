@@ -2,9 +2,21 @@
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 12px;
   cursor: grab;
   transition: all 0.2s;
+  display: flex;
+  overflow: hidden;
+}
+
+.task-priority-bar {
+  width: 4px;
+  flex-shrink: 0;
+}
+
+.task-card-content {
+  flex: 1;
+  padding: 12px;
+  min-width: 0;
 }
 
 .task-card:hover {
@@ -18,18 +30,7 @@
 }
 
 .task-card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
   margin-bottom: 8px;
-}
-
-.task-priority {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 4px;
 }
 
 .task-title {

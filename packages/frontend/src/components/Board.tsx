@@ -6,9 +6,11 @@ import './TaskCard.css';
 import { TaskDetailModal } from './TaskDetailModal';
 import { AddTaskModal } from './AddTaskModal';
 import { OnboardingHints } from './OnboardingHints';
+import { ProjectSidebar } from './ProjectSidebar';
 import { useAuth } from '../context/AuthContext';
+import { useProjects } from '../context/ProjectContext';
 
-type Column = 'goals' | 'inbox' | 'today' | 'wait' | 'finished' | 'someday';
+type Column = 'backlog' | 'ready' | 'in_progress' | 'review' | 'blocked' | 'ready_to_ship' | 'done' | 'archive';
 
 interface Task {
   id: string;
@@ -26,12 +28,14 @@ interface Task {
 }
 
 const COLUMNS: Array<{ id: Column; title: string; maxTasks?: number; emptyMessage: string }> = [
-  { id: 'goals', title: 'Goals / Projects / Top', emptyMessage: 'No top-level goals yet. Drag important tasks here to prioritize them.' },
-  { id: 'inbox', title: 'Inbox', emptyMessage: 'Inbox is empty. New tasks will appear here by default.' },
-  { id: 'today', title: 'Today', maxTasks: 3, emptyMessage: 'Nothing scheduled for today. Drag up to 3 tasks here to focus on.' },
-  { id: 'wait', title: 'Wait / In-Progress (TEMP)', emptyMessage: 'No tasks in progress or waiting. Move tasks here when blocked or in progress.' },
-  { id: 'finished', title: 'Finished (Archive)', emptyMessage: 'No completed tasks yet. Finished tasks will be archived here.' },
-  { id: 'someday', title: 'Someday / Maybe', emptyMessage: 'No future tasks. Drag tasks here that you might want to do later.' },
+  { id: 'backlog', title: 'Backlog', emptyMessage: 'No tasks in backlog. Add tasks here for future work.' },
+  { id: 'ready', title: 'Ready', emptyMessage: 'No tasks ready to start. Move tasks here when they are ready to be worked on.' },
+  { id: 'in_progress', title: 'In Progress', emptyMessage: 'No tasks in progress. Drag tasks here when you start working on them.' },
+  { id: 'review', title: 'Review / QA', emptyMessage: 'No tasks in review. Move tasks here when they need review or QA.' },
+  { id: 'blocked', title: 'Blocked', emptyMessage: 'No blocked tasks. Move tasks here when they are blocked.' },
+  { id: 'ready_to_ship', title: 'Ready to Ship', emptyMessage: 'No tasks ready to ship. Move tasks here when they are ready for deployment.' },
+  { id: 'done', title: 'Live / Done', emptyMessage: 'No completed tasks. Tasks will appear here when they are live or done.' },
+  { id: 'archive', title: 'Archive', emptyMessage: 'No archived tasks. Move completed tasks here to archive them.' },
 ];
 
 interface Member {
@@ -42,13 +46,13 @@ interface Member {
 
 export function Board() {
   const { user, logout } = useAuth();
+  const { currentProject, loading: projectsLoading } = useProjects();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
-  const [todayLimitMessage, setTodayLimitMessage] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ column: Column; position: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('');
@@ -67,8 +71,10 @@ export function Board() {
   }, []);
 
   useEffect(() => {
-    fetchTasks();
-  }, [searchQuery, assigneeFilter, tagFilter]);
+    if (currentProject) {
+      fetchTasks();
+    }
+  }, [searchQuery, assigneeFilter, tagFilter, currentProject]);
 
   const fetchMembers = async () => {
     try {
@@ -88,11 +94,18 @@ export function Board() {
   };
 
   const fetchTasks = async () => {
+    if (!currentProject) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
       const params = new URLSearchParams();
+      params.append('projectId', currentProject.id);
       if (searchQuery.trim()) {
         params.append('search', searchQuery.trim());
       }
@@ -103,7 +116,7 @@ export function Board() {
         params.append('tag', tagFilter);
       }
 
-      const url = `/api/tasks${params.toString() ? '?' + params.toString() : ''}`;
+      const url = `/api/tasks?${params.toString()}`;
       const response = await fetch(url, {
         credentials: 'include',
       });
@@ -176,12 +189,7 @@ export function Board() {
 
       if (!response.ok) {
         const data = await response.json();
-        if (data.code === 'TODAY_LIMIT_REACHED') {
-          setTodayLimitMessage(data.error);
-          setTimeout(() => setTodayLimitMessage(null), 4000);
-        } else {
-          throw new Error(data.error || 'Failed to move task');
-        }
+        throw new Error(data.error || 'Failed to move task');
       } else {
         // Refresh tasks to get updated positions
         await fetchTasks();
@@ -223,8 +231,8 @@ export function Board() {
     handleDrop(dropTarget.column, dropTarget.position);
   };
 
-  if (loading) {
-    return <div className="board-loading">Loading board...</div>;
+  if (projectsLoading) {
+    return <div className="board-loading">Loading projects...</div>;
   }
 
   if (error) {
@@ -232,9 +240,11 @@ export function Board() {
   }
 
   return (
-    <div className="board">
-      <header className="board-header">
-        <h1 className="board-title">GSD Board</h1>
+    <div className="board-layout">
+      <ProjectSidebar />
+      <div className="board">
+        <header className="board-header">
+          <h1 className="board-title">{currentProject?.name || 'GSD Board'}</h1>
         <nav className="board-nav">
           <button className="nav-link" onClick={() => navigate('/team')}>
             Team
@@ -245,12 +255,6 @@ export function Board() {
           </button>
         </nav>
       </header>
-
-      {todayLimitMessage && (
-        <div className="today-limit-message">
-          {todayLimitMessage}
-        </div>
-      )}
 
       <OnboardingHints />
 
@@ -287,6 +291,10 @@ export function Board() {
           ))}
         </select>
       </div>
+
+      {loading && (
+        <div className="board-tasks-loading">Loading tasks...</div>
+      )}
 
       <div className="board-columns">
         {COLUMNS.map(column => {
@@ -369,6 +377,7 @@ export function Board() {
           onTaskCreated={fetchTasks}
         />
       )}
+      </div>
     </div>
   );
 }

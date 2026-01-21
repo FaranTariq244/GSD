@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import './TaskDetailModal.css';
 import { RichTextEditor } from './RichTextEditor';
 import './RichTextEditor.css';
+import { useProjects } from '../context/ProjectContext';
 
-type Column = 'goals' | 'inbox' | 'today' | 'wait' | 'finished' | 'someday';
+type Column = 'backlog' | 'ready' | 'in_progress' | 'review' | 'blocked' | 'ready_to_ship' | 'done' | 'archive';
 
 interface Member {
   id: string;
@@ -19,6 +20,7 @@ interface AddTaskModalProps {
 
 export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const { currentProject } = useProjects();
   const [isSaving, setIsSaving] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
@@ -101,6 +103,7 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
           due_date: dueDate || null,
           tags: parsedTags,
           assignee_ids: assigneeIds,
+          projectId: currentProject?.id,
         }),
       });
 
@@ -129,12 +132,14 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
 
   const getColumnLabel = (col: Column) => {
     const labels: Record<Column, string> = {
-      goals: 'Goals / Projects / Top',
-      inbox: 'Inbox',
-      today: 'Today',
-      wait: 'Wait / In-Progress',
-      finished: 'Finished',
-      someday: 'Someday / Maybe',
+      backlog: 'Backlog',
+      ready: 'Ready',
+      in_progress: 'In Progress',
+      review: 'Review / QA',
+      blocked: 'Blocked',
+      ready_to_ship: 'Ready to Ship',
+      done: 'Live / Done',
+      archive: 'Archive',
     };
     return labels[col];
   };

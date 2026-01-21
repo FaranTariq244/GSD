@@ -69,10 +69,11 @@ export function TaskCard({ task, onClick, onDragStart, onDragEnd, onDragOver, on
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      <div className="task-card-header">
-        <div className="task-priority" style={{ backgroundColor: PRIORITY_COLORS[task.priority] }} />
-        <h3 className="task-title">{task.title}</h3>
-      </div>
+      <div className="task-priority-bar" style={{ backgroundColor: PRIORITY_COLORS[task.priority] }} />
+      <div className="task-card-content">
+        <div className="task-card-header">
+          <h3 className="task-title">{task.title}</h3>
+        </div>
 
       {(task.tags.length > 0 || task.assignees.length > 0 || dueDateInfo) && (
         <div className="task-card-footer">
@@ -113,6 +114,7 @@ export function TaskCard({ task, onClick, onDragStart, onDragEnd, onDragOver, on
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -635,3 +635,25 @@
   - Loading indicators shown conditionally: isLoadingComments ? "Loading comments..." : comments.length === 0 ? "No comments yet" : <list>
   - All three sections (comments, attachments, assignees in edit mode) now provide visual feedback during data loading
 ---
+
+## Iteration 30 - Add onboarding hints
+- Created OnboardingHints component with dismissible hints for new users
+- Implemented three key hints: Inbox first, Today limit (max 3), and drag & drop instructions
+- Added localStorage persistence for dismissed state so hints don't reappear after closing
+- Integrated hints into Board component at the top (above topbar and columns)
+- Files changed:
+  - packages/frontend/src/components/OnboardingHints.tsx (new component with hint items and dismiss button)
+  - packages/frontend/src/components/OnboardingHints.css (gradient background, slide-down animation, responsive styles)
+  - packages/frontend/src/components/Board.tsx (imported and rendered OnboardingHints)
+  - PRD.md (marked task complete)
+- Learnings for future iterations:
+  - Onboarding pattern: Show hints on first visit, save dismissed state to localStorage
+  - Hint visibility: Check localStorage on mount, only show if 'onboarding-hints-dismissed' is not set
+  - Hint styling: Gradient background (purple/blue), white text, semi-transparent hint items
+  - Hint content structure: Icon (emoji) + text with bold title and description
+  - Animation: slideDown animation on mount for smooth entrance (0.3s ease-out)
+  - Dismiss behavior: Close button (X) saves to localStorage and hides component
+  - Responsive design: Smaller font sizes and padding on mobile (<768px)
+  - Three core hints: 1) Inbox first workflow, 2) Today max 3 limit, 3) Drag and drop instructions
+  - Component returns null when not visible for clean render (no empty divs)
+---

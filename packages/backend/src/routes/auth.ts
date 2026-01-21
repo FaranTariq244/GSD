@@ -61,10 +61,18 @@ router.post('/signup', async (req: Request, res: Response) => {
       [account.id, user.id, 'owner']
     );
 
-    // Create board for the account
+    // Create default project for the account
+    const projectResult = await client.query(
+      'INSERT INTO projects (account_id, name, description, created_by, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW()) RETURNING id',
+      [account.id, 'My First Project', 'Default project created on signup', user.id]
+    );
+
+    const project = projectResult.rows[0];
+
+    // Create board for the project
     await client.query(
-      'INSERT INTO boards (account_id, name, created_at) VALUES ($1, $2, NOW())',
-      [account.id, 'Team Board']
+      'INSERT INTO boards (account_id, project_id, name, created_at) VALUES ($1, $2, $3, NOW())',
+      [account.id, project.id, 'Project Board']
     );
 
     await client.query('COMMIT');

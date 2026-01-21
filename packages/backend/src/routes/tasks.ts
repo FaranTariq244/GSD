@@ -5,7 +5,7 @@ import { authenticate, AuthRequest } from '../middleware/auth.js';
 const router = Router();
 
 // Valid column values
-const VALID_COLUMNS = ['goals', 'inbox', 'today', 'wait', 'finished', 'someday'];
+const VALID_COLUMNS = ['backlog', 'ready', 'in_progress', 'review', 'blocked', 'ready_to_ship', 'done', 'archive'];
 
 // Valid priority values
 const VALID_PRIORITIES = ['hot', 'warm', 'normal', 'cold'];
@@ -13,18 +13,37 @@ const VALID_PRIORITIES = ['hot', 'warm', 'normal', 'cold'];
 // GET /tasks - Get tasks with optional filters
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
-  const { column, assignee, tag, search } = req.query;
+  const { column, assignee, tag, search, projectId } = req.query;
 
   try {
-    // First, get the user's board
-    const boardResult = await pool.query(
-      `SELECT b.id
-       FROM boards b
-       INNER JOIN account_members am ON b.account_id = am.account_id
-       WHERE am.user_id = $1
-       LIMIT 1`,
-      [userId]
-    );
+    // Get the board for the specified project (or first project if not specified)
+    let boardQuery: string;
+    let boardParams: any[];
+
+    if (projectId && typeof projectId === 'string') {
+      // Get board for specific project
+      boardQuery = `
+        SELECT b.id
+        FROM boards b
+        INNER JOIN projects p ON b.project_id = p.id
+        INNER JOIN account_members am ON p.account_id = am.account_id
+        WHERE p.id = $1 AND am.user_id = $2
+        LIMIT 1
+      `;
+      boardParams = [parseInt(projectId), userId];
+    } else {
+      // Fallback: get the first board (for backwards compatibility)
+      boardQuery = `
+        SELECT b.id
+        FROM boards b
+        INNER JOIN account_members am ON b.account_id = am.account_id
+        WHERE am.user_id = $1
+        LIMIT 1
+      `;
+      boardParams = [userId];
+    }
+
+    const boardResult = await pool.query(boardQuery, boardParams);
 
     if (boardResult.rows.length === 0) {
       return res.status(404).json({ error: 'No board found for your account' });
@@ -130,11 +149,12 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   const {
     title,
     description = null,
-    column = 'inbox',
+    column = 'backlog',
     priority = 'normal',
     due_date = null,
     assignee_ids = [],
-    tags = []
+    tags = [],
+    projectId
   } = req.body;
 
   // Validate required fields
@@ -171,15 +191,34 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     await client.query('BEGIN');
 
-    // Get the user's board
-    const boardResult = await client.query(
-      `SELECT b.id
-       FROM boards b
-       INNER JOIN account_members am ON b.account_id = am.account_id
-       WHERE am.user_id = $1
-       LIMIT 1`,
-      [userId]
-    );
+    // Get the board for the specified project (or first project if not specified)
+    let boardQuery: string;
+    let boardParams: any[];
+
+    if (projectId) {
+      // Get board for specific project
+      boardQuery = `
+        SELECT b.id
+        FROM boards b
+        INNER JOIN projects p ON b.project_id = p.id
+        INNER JOIN account_members am ON p.account_id = am.account_id
+        WHERE p.id = $1 AND am.user_id = $2
+        LIMIT 1
+      `;
+      boardParams = [parseInt(projectId), userId];
+    } else {
+      // Fallback: get the first board (for backwards compatibility)
+      boardQuery = `
+        SELECT b.id
+        FROM boards b
+        INNER JOIN account_members am ON b.account_id = am.account_id
+        WHERE am.user_id = $1
+        LIMIT 1
+      `;
+      boardParams = [userId];
+    }
+
+    const boardResult = await client.query(boardQuery, boardParams);
 
     if (boardResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -512,23 +551,6 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
     const fromColumn = task.column;
     const fromPosition = task.position;
     const boardId = task.board_id;
-
-    // If moving to "today" column, check the max 3 limit
-    if (to_column === 'today' && fromColumn !== 'today') {
-      const todayCountResult = await client.query(
-        `SELECT COUNT(*) as count FROM tasks WHERE board_id = $1 AND "column" = 'today'`,
-        [boardId]
-      );
-      const todayCount = parseInt(todayCountResult.rows[0].count);
-
-      if (todayCount >= 3) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({
-          error: 'Today is limited to 3 tasks. Move one out first.',
-          code: 'TODAY_LIMIT_REACHED'
-        });
-      }
-    }
 
     // If moving within the same column, reorder tasks
     if (fromColumn === to_column) {

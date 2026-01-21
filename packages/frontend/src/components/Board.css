@@ -1,6 +1,12 @@
-.board {
-  padding: 20px;
+.board-layout {
+  display: flex;
   height: 100vh;
+  overflow: hidden;
+}
+
+.board {
+  flex: 1;
+  padding: 20px;
   overflow-x: auto;
   position: relative;
   display: flex;
@@ -133,33 +139,6 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.today-limit-message {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #dc2626;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
 .board-loading,
 .board-error {
   padding: 40px;
@@ -169,6 +148,16 @@
 
 .board-error {
   color: #dc2626;
+}
+
+.board-tasks-loading {
+  padding: 8px 16px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 13px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  text-align: center;
 }
 
 .board-columns {
