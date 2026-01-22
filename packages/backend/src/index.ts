@@ -8,6 +8,7 @@ import tasksRoutes from './routes/tasks.js';
 import commentsRoutes from './routes/comments.js';
 import attachmentsRoutes from './routes/attachments.js';
 import projectsRoutes from './routes/projects.js';
+import tagsRoutes from './routes/tags.js';
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +28,7 @@ app.use('/api/account', accountRoutes);
 app.use('/api/board', boardRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/projects', projectsRoutes);
+app.use('/api/tags', tagsRoutes);
 app.use('/api', commentsRoutes);
 app.use('/api', attachmentsRoutes);
 

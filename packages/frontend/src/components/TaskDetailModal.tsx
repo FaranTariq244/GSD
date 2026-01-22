@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import './TaskDetailModal.css';
 import { RichTextEditor, MarkdownContent } from './RichTextEditor';
 import './RichTextEditor.css';
+import { TagPicker, type Tag } from './TagPicker';
+import { DEFAULT_TAG_COLOR } from '../constants/colors';
 
 interface Task {
   id: string;
@@ -12,7 +14,7 @@ interface Task {
   priority: 'hot' | 'warm' | 'normal' | 'cold';
   due_date: string | null;
   assignees: Array<{ id: string; name: string; email: string }>;
-  tags: string[];
+  tags: Tag[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -95,7 +97,8 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
   const [editDescription, setEditDescription] = useState(task.description || '');
   const [editPriority, setEditPriority] = useState(task.priority);
   const [editDueDate, setEditDueDate] = useState(task.due_date || '');
-  const [editTags, setEditTags] = useState(task.tags.join(', '));
+  const [editTags, setEditTags] = useState<Tag[]>(task.tags);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>(
     task.assignees.map(a => a.id)
   );
@@ -146,6 +149,25 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
     };
 
     fetchMembers();
+  }, []);
+
+  useEffect(() => {
+    // Fetch available tags
+    const fetchTags = async () => {
+      try {
+        const response = await fetch('/api/tags', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableTags(data.tags || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+      }
+    };
+
+    fetchTags();
   }, []);
 
   useEffect(() => {
@@ -200,11 +222,6 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
 
     setIsSaving(true);
     try {
-      const tags = editTags
-        .split(',')
-        .map(t => t.trim())
-        .filter(t => t.length > 0);
-
       const response = await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: {
@@ -216,7 +233,7 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
           description: editDescription.trim() || null,
           priority: editPriority,
           due_date: editDueDate || null,
-          tags,
+          tags: editTags.map(t => t.id),
           assignee_ids: editAssigneeIds,
         }),
       });
@@ -242,7 +259,7 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
     setEditDescription(task.description || '');
     setEditPriority(task.priority);
     setEditDueDate(task.due_date || '');
-    setEditTags(task.tags.join(', '));
+    setEditTags(task.tags);
     setEditAssigneeIds(task.assignees.map(a => a.id));
     setIsEditing(false);
   };
@@ -253,6 +270,29 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
         ? prev.filter(id => id !== memberId)
         : [...prev, memberId]
     );
+  };
+
+  const handleCreateTag = async (name: string): Promise<Tag | null> => {
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ name, color: DEFAULT_TAG_COLOR }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newTag = data.tag;
+        setAvailableTags(prev => [...prev, newTag]);
+        return newTag;
+      }
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+    }
+    return null;
   };
 
   const handleDelete = async () => {
@@ -500,20 +540,28 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
               <div className="detail-item">
                 <label className="detail-label">Tags</label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    className="detail-input"
-                    value={editTags}
-                    onChange={(e) => setEditTags(e.target.value)}
-                    placeholder="tag1, tag2, tag3"
+                  <TagPicker
+                    selectedTags={editTags}
+                    onTagsChange={setEditTags}
+                    availableTags={availableTags}
+                    onCreateTag={handleCreateTag}
+                    placeholder="Search or create tags..."
                   />
                 ) : (
                   <div className="detail-value">
                     {task.tags.length > 0 ? (
                       <div className="tags-list">
                         {task.tags.map(tag => (
-                          <span key={tag} className="tag-chip">
-                            {tag}
+                          <span
+                            key={tag.id}
+                            className="tag-chip"
+                            style={{
+                              backgroundColor: `${tag.color}20`,
+                              color: tag.color,
+                              borderColor: tag.color
+                            }}
+                          >
+                            {tag.name}
                           </span>
                         ))}
                       </div>

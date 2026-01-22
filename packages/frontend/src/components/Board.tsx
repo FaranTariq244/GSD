@@ -7,10 +7,17 @@ import { TaskDetailModal } from './TaskDetailModal';
 import { AddTaskModal } from './AddTaskModal';
 import { OnboardingHints } from './OnboardingHints';
 import { ProjectSidebar } from './ProjectSidebar';
+import { TagManagementModal } from './TagManagementModal';
 import { useAuth } from '../context/AuthContext';
 import { useProjects } from '../context/ProjectContext';
 
 type Column = 'backlog' | 'ready' | 'in_progress' | 'review' | 'blocked' | 'ready_to_ship' | 'done' | 'archive';
+
+interface Tag {
+  id: number;
+  name: string;
+  color: string;
+}
 
 interface Task {
   id: string;
@@ -21,7 +28,7 @@ interface Task {
   priority: 'hot' | 'warm' | 'normal' | 'cold';
   due_date: string | null;
   assignees: Array<{ id: string; name: string; email: string }>;
-  tags: string[];
+  tags: Tag[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -58,8 +65,9 @@ export function Board() {
   const [assigneeFilter, setAssigneeFilter] = useState<string>('');
   const [tagFilter, setTagFilter] = useState<string>('');
   const [members, setMembers] = useState<Member[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
   const [addTaskColumn, setAddTaskColumn] = useState<Column | null>(null);
+  const [showTagManagement, setShowTagManagement] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -129,11 +137,11 @@ export function Board() {
       setTasks(data.tasks || []);
 
       // Extract unique tags from all tasks for filter dropdown
-      const tagsSet = new Set<string>();
+      const tagsMap = new Map<number, Tag>();
       (data.tasks || []).forEach((task: Task) => {
-        task.tags.forEach(tag => tagsSet.add(tag));
+        task.tags.forEach(tag => tagsMap.set(tag.id, tag));
       });
-      setAllTags(Array.from(tagsSet).sort());
+      setAllTags(Array.from(tagsMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
@@ -285,11 +293,17 @@ export function Board() {
         >
           <option value="">All Tags</option>
           {allTags.map((tag) => (
-            <option key={tag} value={tag}>
-              {tag}
+            <option key={tag.id} value={tag.name}>
+              {tag.name}
             </option>
           ))}
         </select>
+        <button
+          className="btn btn-secondary manage-tags-btn"
+          onClick={() => setShowTagManagement(true)}
+        >
+          Manage Tags
+        </button>
       </div>
 
       {loading && (
@@ -375,6 +389,13 @@ export function Board() {
           targetColumn={addTaskColumn}
           onClose={() => setAddTaskColumn(null)}
           onTaskCreated={fetchTasks}
+        />
+      )}
+
+      {showTagManagement && (
+        <TagManagementModal
+          onClose={() => setShowTagManagement(false)}
+          onTagsUpdated={fetchTasks}
         />
       )}
       </div>

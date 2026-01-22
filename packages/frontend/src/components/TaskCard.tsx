@@ -1,3 +1,9 @@
+interface Tag {
+  id: number;
+  name: string;
+  color: string;
+}
+
 interface TaskCardProps {
   task: {
     id: string;
@@ -5,7 +11,7 @@ interface TaskCardProps {
     priority: 'hot' | 'warm' | 'normal' | 'cold';
     due_date: string | null;
     assignees: Array<{ id: string; name: string; email: string }>;
-    tags: string[];
+    tags: Tag[];
   };
   onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
@@ -80,8 +86,16 @@ export function TaskCard({ task, onClick, onDragStart, onDragEnd, onDragOver, on
           {task.tags.length > 0 && (
             <div className="task-tags">
               {visibleTags.map(tag => (
-                <span key={tag} className="task-tag">
-                  {tag}
+                <span
+                  key={tag.id}
+                  className="task-tag"
+                  style={{
+                    backgroundColor: `${tag.color}20`,
+                    color: tag.color,
+                    borderColor: tag.color
+                  }}
+                >
+                  {tag.name}
                 </span>
               ))}
               {remainingTagCount > 0 && (

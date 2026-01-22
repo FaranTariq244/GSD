@@ -56,11 +56,10 @@
 
 .task-tag {
   font-size: 11px;
-  background: #eff6ff;
-  color: #1e40af;
   padding: 2px 8px;
   border-radius: 12px;
   font-weight: 500;
+  border: 1px solid;
 }
 
 .task-tag-more {

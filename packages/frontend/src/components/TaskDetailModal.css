@@ -161,11 +161,10 @@
 .tag-chip {
   display: inline-block;
   padding: 4px 10px;
-  background-color: #e0e7ff;
-  color: #4338ca;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+  border: 1px solid;
 }
 
 .assignees-list {

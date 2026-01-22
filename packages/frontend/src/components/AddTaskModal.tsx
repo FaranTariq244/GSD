@@ -3,6 +3,8 @@ import './TaskDetailModal.css';
 import { RichTextEditor } from './RichTextEditor';
 import './RichTextEditor.css';
 import { useProjects } from '../context/ProjectContext';
+import { TagPicker, type Tag } from './TagPicker';
+import { DEFAULT_TAG_COLOR } from '../constants/colors';
 
 type Column = 'backlog' | 'ready' | 'in_progress' | 'review' | 'blocked' | 'ready_to_ship' | 'done' | 'archive';
 
@@ -30,7 +32,8 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'hot' | 'warm' | 'normal' | 'cold'>('normal');
   const [dueDate, setDueDate] = useState('');
-  const [tags, setTags] = useState('');
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -76,6 +79,24 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
     fetchMembers();
   }, []);
 
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await fetch('/api/tags', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableTags(data.tags || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+      }
+    };
+
+    fetchTags();
+  }, []);
+
   const handleSave = async () => {
     if (!title.trim()) {
       alert('Title is required');
@@ -84,11 +105,6 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
 
     setIsSaving(true);
     try {
-      const parsedTags = tags
-        .split(',')
-        .map(t => t.trim())
-        .filter(t => t.length > 0);
-
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
@@ -101,7 +117,7 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
           column: targetColumn,
           priority,
           due_date: dueDate || null,
-          tags: parsedTags,
+          tags: selectedTags.map(t => t.id),
           assignee_ids: assigneeIds,
           projectId: currentProject?.id,
         }),
@@ -128,6 +144,29 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
         ? prev.filter(id => id !== memberId)
         : [...prev, memberId]
     );
+  };
+
+  const handleCreateTag = async (name: string): Promise<Tag | null> => {
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ name, color: DEFAULT_TAG_COLOR }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newTag = data.tag;
+        setAvailableTags(prev => [...prev, newTag]);
+        return newTag;
+      }
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+    }
+    return null;
   };
 
   const getColumnLabel = (col: Column) => {
@@ -209,12 +248,12 @@ export function AddTaskModal({ targetColumn, onClose, onTaskCreated }: AddTaskMo
               {/* Tags */}
               <div className="detail-item">
                 <label className="detail-label">Tags</label>
-                <input
-                  type="text"
-                  className="detail-input"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  placeholder="tag1, tag2, tag3"
+                <TagPicker
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  availableTags={availableTags}
+                  onCreateTag={handleCreateTag}
+                  placeholder="Search or create tags..."
                 />
               </div>
 

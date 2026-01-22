@@ -82,7 +82,8 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     if (tag && typeof tag === 'string') {
       query += ` AND EXISTS (
         SELECT 1 FROM task_tags tt
-        WHERE tt.task_id = t.id AND tt.tag = $${paramIndex}
+        INNER JOIN tags tg ON tg.id = tt.tag_id
+        WHERE tt.task_id = t.id AND tg.name = $${paramIndex}
       )`;
       params.push(tag);
       paramIndex++;
@@ -114,7 +115,10 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
         // Get tags
         const tagsResult = await pool.query(
-          `SELECT tag FROM task_tags WHERE task_id = $1`,
+          `SELECT t.id, t.name, t.color
+           FROM tags t
+           INNER JOIN task_tags tt ON tt.tag_id = t.id
+           WHERE tt.task_id = $1`,
           [task.id]
         );
 
@@ -128,7 +132,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
           priority: task.priority,
           due_date: task.due_date,
           assignees: assigneesResult.rows,
-          tags: tagsResult.rows.map((row) => row.tag),
+          tags: tagsResult.rows,
           created_by: task.created_by,
           created_at: task.created_at,
           updated_at: task.updated_at
@@ -261,13 +265,46 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     // Add tags if provided
     if (tags.length > 0) {
+      // Get account_id for creating new tags
+      const accountResult = await client.query(
+        `SELECT account_id FROM account_members WHERE user_id = $1 LIMIT 1`,
+        [userId]
+      );
+      const accountId = accountResult.rows[0]?.account_id;
+
       for (const tag of tags) {
-        if (typeof tag === 'string' && tag.trim().length > 0) {
+        let tagId: number | null = null;
+
+        if (typeof tag === 'number') {
+          // Tag ID provided directly
+          tagId = tag;
+        } else if (typeof tag === 'object' && tag !== null && tag.id) {
+          // Tag object with id property
+          tagId = tag.id;
+        } else if (typeof tag === 'string' && tag.trim().length > 0) {
+          // Tag name - look up or create
+          const existingTag = await client.query(
+            `SELECT id FROM tags WHERE account_id = $1 AND LOWER(name) = LOWER($2)`,
+            [accountId, tag.trim()]
+          );
+          if (existingTag.rows.length > 0) {
+            tagId = existingTag.rows[0].id;
+          } else {
+            // Create new tag with default color
+            const newTag = await client.query(
+              `INSERT INTO tags (account_id, name) VALUES ($1, $2) RETURNING id`,
+              [accountId, tag.trim()]
+            );
+            tagId = newTag.rows[0].id;
+          }
+        }
+
+        if (tagId !== null) {
           await client.query(
-            `INSERT INTO task_tags (task_id, tag)
+            `INSERT INTO task_tags (task_id, tag_id)
              VALUES ($1, $2)
              ON CONFLICT DO NOTHING`,
-            [task.id, tag.trim()]
+            [task.id, tagId]
           );
         }
       }
@@ -285,7 +322,10 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     );
 
     const tagsResult = await pool.query(
-      `SELECT tag FROM task_tags WHERE task_id = $1`,
+      `SELECT t.id, t.name, t.color
+       FROM tags t
+       INNER JOIN task_tags tt ON tt.tag_id = t.id
+       WHERE tt.task_id = $1`,
       [task.id]
     );
 
@@ -299,7 +339,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       priority: task.priority,
       due_date: task.due_date,
       assignees: assigneesResult.rows,
-      tags: tagsResult.rows.map((row) => row.tag),
+      tags: tagsResult.rows,
       created_by: task.created_by,
       created_at: task.created_at,
       updated_at: task.updated_at
@@ -434,17 +474,46 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         return res.status(400).json({ error: 'tags must be an array' });
       }
 
+      // Get account_id for creating new tags
+      const accountResult = await client.query(
+        `SELECT account_id FROM account_members WHERE user_id = $1 LIMIT 1`,
+        [userId]
+      );
+      const accountId = accountResult.rows[0]?.account_id;
+
       // Remove all existing tags
       await client.query(`DELETE FROM task_tags WHERE task_id = $1`, [taskId]);
 
       // Add new tags
       for (const tag of tags) {
-        if (typeof tag === 'string' && tag.trim().length > 0) {
+        let tagId: number | null = null;
+
+        if (typeof tag === 'number') {
+          tagId = tag;
+        } else if (typeof tag === 'object' && tag !== null && tag.id) {
+          tagId = tag.id;
+        } else if (typeof tag === 'string' && tag.trim().length > 0) {
+          const existingTag = await client.query(
+            `SELECT id FROM tags WHERE account_id = $1 AND LOWER(name) = LOWER($2)`,
+            [accountId, tag.trim()]
+          );
+          if (existingTag.rows.length > 0) {
+            tagId = existingTag.rows[0].id;
+          } else {
+            const newTag = await client.query(
+              `INSERT INTO tags (account_id, name) VALUES ($1, $2) RETURNING id`,
+              [accountId, tag.trim()]
+            );
+            tagId = newTag.rows[0].id;
+          }
+        }
+
+        if (tagId !== null) {
           await client.query(
-            `INSERT INTO task_tags (task_id, tag)
+            `INSERT INTO task_tags (task_id, tag_id)
              VALUES ($1, $2)
              ON CONFLICT DO NOTHING`,
-            [taskId, tag.trim()]
+            [taskId, tagId]
           );
         }
       }
@@ -471,7 +540,10 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     );
 
     const tagsResult = await pool.query(
-      `SELECT tag FROM task_tags WHERE task_id = $1`,
+      `SELECT t.id, t.name, t.color
+       FROM tags t
+       INNER JOIN task_tags tt ON tt.tag_id = t.id
+       WHERE tt.task_id = $1`,
       [taskId]
     );
 
@@ -485,7 +557,7 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       priority: task.priority,
       due_date: task.due_date,
       assignees: assigneesResult.rows,
-      tags: tagsResult.rows.map((row) => row.tag),
+      tags: tagsResult.rows,
       created_by: task.created_by,
       created_at: task.created_at,
       updated_at: task.updated_at
@@ -620,7 +692,10 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
     );
 
     const tagsResult = await pool.query(
-      `SELECT tag FROM task_tags WHERE task_id = $1`,
+      `SELECT t.id, t.name, t.color
+       FROM tags t
+       INNER JOIN task_tags tt ON tt.tag_id = t.id
+       WHERE tt.task_id = $1`,
       [taskId]
     );
 
@@ -634,7 +709,7 @@ router.post('/:id/move', authenticate, async (req: AuthRequest, res: Response) =
       priority: updatedTask.priority,
       due_date: updatedTask.due_date,
       assignees: assigneesResult.rows,
-      tags: tagsResult.rows.map((row) => row.tag),
+      tags: tagsResult.rows,
       created_by: updatedTask.created_by,
       created_at: updatedTask.created_at,
       updated_at: updatedTask.updated_at

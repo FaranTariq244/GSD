@@ -139,6 +139,12 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.manage-tags-btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
 .board-loading,
 .board-error {
   padding: 40px;

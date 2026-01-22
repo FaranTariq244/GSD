@@ -1,0 +1,35 @@
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.color-picker-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, border-color 0.15s;
+  padding: 0;
+}
+
+.color-picker-swatch:hover {
+  transform: scale(1.1);
+}
+
+.color-picker-swatch.selected {
+  border-color: #374151;
+  transform: scale(1.1);
+}
+
+.color-picker-check {
+  width: 14px;
+  height: 14px;
+  color: white;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+}
