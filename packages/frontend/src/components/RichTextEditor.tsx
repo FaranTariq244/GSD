@@ -56,7 +56,15 @@ export function RichTextEditor({ value, onChange, placeholder, taskId }: RichTex
       }
 
       const data = await response.json();
-      const imageUrl = data.attachment?.download_url || data.url;
+
+      // Use permanent view endpoint for task attachments (presigned URLs expire)
+      // For temp uploads, use the direct URL
+      let imageUrl: string;
+      if (taskId && data.attachment?.id) {
+        imageUrl = `/api/attachments/${data.attachment.id}/view`;
+      } else {
+        imageUrl = data.attachment?.download_url || data.url;
+      }
 
       setUploadedImages(prev => [...prev, {
         url: imageUrl,

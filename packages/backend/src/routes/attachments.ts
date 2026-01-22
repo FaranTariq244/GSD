@@ -205,6 +205,39 @@ router.get('/attachments/:id', authenticate, async (req: AuthRequest, res) => {
 });
 
 /**
+ * GET /attachments/:id/view
+ * Redirect to a fresh presigned URL for viewing an attachment
+ * This endpoint is used for embedding images in markdown content
+ */
+router.get('/attachments/:id/view', authenticate, async (req: AuthRequest, res) => {
+  const attachmentId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+  const userId = req.userId!;
+
+  try {
+    // Fetch attachment and verify user has access
+    const result = await pool.query(
+      `SELECT a.storage_key
+       FROM attachments a
+       INNER JOIN tasks t ON t.id = a.task_id
+       INNER JOIN boards b ON b.id = t.board_id
+       INNER JOIN account_members am ON am.account_id = b.account_id
+       WHERE a.id = $1 AND am.user_id = $2`,
+      [attachmentId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    const downloadUrl = await getDownloadUrl(result.rows[0].storage_key);
+    return res.redirect(downloadUrl);
+  } catch (error) {
+    console.error('Error fetching attachment for view:', error);
+    return res.status(500).json({ error: 'Failed to fetch attachment' });
+  }
+});
+
+/**
  * POST /attachments/temp
  * Upload a temporary image (for use before task is created)
  * These images are stored directly and the URL can be embedded in markdown

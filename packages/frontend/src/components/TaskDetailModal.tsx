@@ -26,6 +26,21 @@ interface Member {
   email: string;
 }
 
+interface CommentAttachment {
+  id: string;
+  original_filename: string;
+  mime_type: string;
+  size_bytes: number;
+  download_url: string;
+  thumbnail_url: string | null;
+  uploader: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  created_at: string;
+}
+
 interface Comment {
   id: string;
   task_id: string;
@@ -35,6 +50,7 @@ interface Comment {
     name: string;
     email: string;
   };
+  attachments: CommentAttachment[];
   created_at: string;
 }
 
@@ -354,6 +370,37 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
       alert('Failed to post comment. Please try again.');
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteCommentAttachment = async (commentId: string, attachmentId: string) => {
+    if (!confirm('Are you sure you want to delete this attachment?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/comments/${commentId}/attachments/${attachmentId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete attachment');
+      }
+
+      // Update the comment in state
+      setComments(prev => prev.map(comment => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            attachments: comment.attachments.filter(a => a.id !== attachmentId),
+          };
+        }
+        return comment;
+      }));
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      alert('Failed to delete attachment. Please try again.');
     }
   };
 
@@ -718,27 +765,68 @@ export function TaskDetailModal({ task, onClose, onTaskUpdated, onTaskDeleted }:
                         <span className="comment-date">{formatDateTime(comment.created_at)}</span>
                       </div>
                     </div>
-                    <div className="comment-body">{comment.body}</div>
+                    {comment.body.trim() && <div className="comment-body"><MarkdownContent content={comment.body} /></div>}
+                    {comment.attachments && comment.attachments.length > 0 && (
+                      <div className="comment-attachments">
+                        {comment.attachments.map(attachment => (
+                          <div key={attachment.id} className="comment-attachment-item">
+                            {isImage(attachment.mime_type) ? (
+                              <div className="comment-attachment-image">
+                                <a href={attachment.download_url} target="_blank" rel="noopener noreferrer">
+                                  <img
+                                    src={attachment.thumbnail_url || attachment.download_url}
+                                    alt={attachment.original_filename}
+                                  />
+                                </a>
+                                <button
+                                  className="comment-attachment-delete"
+                                  onClick={() => handleDeleteCommentAttachment(comment.id, attachment.id)}
+                                  title="Delete attachment"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="comment-attachment-file">
+                                <span className="comment-attachment-icon">📎</span>
+                                <a href={attachment.download_url} target="_blank" rel="noopener noreferrer">
+                                  {attachment.original_filename}
+                                </a>
+                                <span className="comment-attachment-size">({formatFileSize(attachment.size_bytes)})</span>
+                                <button
+                                  className="comment-attachment-delete"
+                                  onClick={() => handleDeleteCommentAttachment(comment.id, attachment.id)}
+                                  title="Delete attachment"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
             <div className="comment-composer">
-              <textarea
-                className="comment-textarea"
+              <RichTextEditor
                 value={newCommentBody}
-                onChange={(e) => setNewCommentBody(e.target.value)}
-                placeholder="Write a comment..."
-                rows={3}
+                onChange={setNewCommentBody}
+                placeholder="Write a comment... You can paste or drag images here!"
+                taskId={task.id}
               />
-              <button
-                className="btn btn-primary"
-                onClick={handleSubmitComment}
-                disabled={isSubmittingComment || !newCommentBody.trim()}
-              >
-                {isSubmittingComment ? 'Posting...' : 'Post Comment'}
-              </button>
+              <div className="comment-actions">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSubmitComment}
+                  disabled={isSubmittingComment || !newCommentBody.trim()}
+                >
+                  {isSubmittingComment ? 'Posting...' : 'Post Comment'}
+                </button>
+              </div>
             </div>
           </section>
 
